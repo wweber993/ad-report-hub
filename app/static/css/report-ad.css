@@ -68,12 +68,7 @@
 .card-muted { --stat-color: #64748b; }
 .card-muted .stat-icon { background: rgba(100, 116, 139, 0.1); color: #64748b; }
 
-.stats-grid-4col {
-    grid-template-columns: repeat(4, 1fr);
-}
-
-.card-muted { --stat-color: #64748b; }
-.card-muted .stat-icon { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.stat-card {
     padding: 18px 20px;
     display: flex;
     align-items: center;
@@ -400,6 +395,11 @@
     color: #fbbf24;
     border: 1px solid rgba(251, 191, 36, 0.25);
 }
+.isoc-badge-framework.cis {
+    background: rgba(168, 85, 247, 0.12);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+}
 
 /* Control ID tag */
 .isoc-control-id {
@@ -509,4 +509,32 @@
 .spin {
     display: inline-block;
     animation: spin 0.7s linear infinite;
+}
+
+/* ── Skeleton Loading ──────────────────────────────────────────── */
+@keyframes skeleton-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+.skeleton-card {
+    pointer-events: none;
+    cursor: default !important;
+}
+
+.skel-line {
+    background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0.04) 25%,
+        rgba(255,255,255,0.10) 50%,
+        rgba(255,255,255,0.04) 75%
+    );
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 1.4s infinite linear;
+    border-radius: 6px;
+}
+
+/* Fix stats-grid-4col definition (was duplicated) */
+.stats-grid-4col {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }

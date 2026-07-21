@@ -19,7 +19,7 @@ from flask import (
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.auth    import auth_bp
-from app.models  import User, db
+from app.models  import User, db, log_audit
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,9 @@ def login():
                 if user.failed_attempts >= 5:
                     user.is_locked = True
                     logger.warning("Account '%s' locked after 5 failed attempts.", username)
+                    log_audit("SYSTEM", "USER_LOCKED", target=username, details="5 falhas consecutivas de login.")
                 db.session.commit()
+            log_audit(username, "LOGIN_FAILED", target=username, details=f"IP: {ip}")
             return redirect(url_for("auth.login"))
 
         if user.is_locked:
@@ -106,6 +108,7 @@ def mfa():
             db.session.commit()
             session.pop("mfa_user_id", None)
             logger.info("User '%s' logged in successfully.", user.username)
+            log_audit(user.username, "LOGIN_SUCCESS", details="MFA validado com sucesso.")
             return redirect(url_for("core.home"))
         else:
             flash("Código inválido.", "danger")
@@ -139,6 +142,8 @@ def setup_mfa():
             db.session.commit()
             session.pop("mfa_user_id", None)
             logger.info("User '%s' setup MFA and logged in successfully.", user.username)
+            log_audit(user.username, "MFA_SETUP", details="Autenticação em duas etapas configurada.")
+            log_audit(user.username, "LOGIN_SUCCESS")
             flash("Autenticação em duas etapas configurada com sucesso!", "success")
             return redirect(url_for("core.home"))
         else:
@@ -165,6 +170,7 @@ def setup_mfa():
 @login_required
 def logout():
     logger.info("User '%s' logged out.", current_user.username)
+    log_audit(current_user.username, "LOGOUT_SUCCESS")
     logout_user()
     flash("Sessão encerrada com sucesso.", "info")
     return redirect(url_for("auth.login"))
@@ -195,6 +201,7 @@ def change_password():
         current_user.set_password(new_pw)
         db.session.commit()
         logger.info("User '%s' changed password.", current_user.username)
+        log_audit(current_user.username, "PASSWORD_CHANGED")
         flash("Senha alterada com sucesso!", "success")
         return redirect(url_for("core.home"))
 

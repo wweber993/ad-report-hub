@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% block title %}Histórico & Tendência — AD Report Hub{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+{% endblock %}
+
+{% block breadcrumb %}
+<span class="topbar-sep">/</span>
+<span>Histórico & Tendência</span>
+{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+
+  <!-- Page Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <h1 style="font-size:1.45rem;font-weight:700;color:#f8fafc;margin:0;">
+        <i class="bi bi-graph-up-arrow me-2" style="color:#38bdf8;"></i>
+        Histórico & Tendência
+      </h1>
+      <p class="text-secondary small mb-0 mt-1">Evolução dos indicadores ao longo do tempo, por ambiente</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <!-- Days filter -->
+      <div class="btn-group" id="daysFilter" role="group" aria-label="Período">
+        <button type="button" class="btn btn-sm btn-outline-secondary days-btn" data-days="7">7d</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary days-btn active" data-days="30">30d</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary days-btn" data-days="60">60d</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary days-btn" data-days="90">90d</button>
+      </div>
+      <!-- Env filter -->
+      <select id="envFilter" class="form-select form-select-sm" style="min-width:160px;background:var(--glass-bg);border:1px solid rgba(255,255,255,.1);color:#f8fafc;">
+        <option value="">Todos os ambientes</option>
+      </select>
+      <button id="refreshHistoryBtn" class="btn btn-sm btn-outline-info">
+        <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Trend Cards -->
+  <div class="stats-grid stats-grid-4col mb-4" id="trendCards">
+    <div class="glass-card stat-card card-primary skeleton-card" style="min-height:90px;">
+      <div class="skel-line" style="width:40%;height:1.8rem;border-radius:8px;margin-bottom:8px;"></div>
+      <div class="skel-line" style="width:70%;height:.8rem;border-radius:6px;"></div>
+    </div>
+    <div class="glass-card stat-card card-success skeleton-card" style="min-height:90px;">
+      <div class="skel-line" style="width:40%;height:1.8rem;border-radius:8px;margin-bottom:8px;"></div>
+      <div class="skel-line" style="width:70%;height:.8rem;border-radius:6px;"></div>
+    </div>
+    <div class="glass-card stat-card card-danger skeleton-card" style="min-height:90px;">
+      <div class="skel-line" style="width:40%;height:1.8rem;border-radius:8px;margin-bottom:8px;"></div>
+      <div class="skel-line" style="width:70%;height:.8rem;border-radius:6px;"></div>
+    </div>
+    <div class="glass-card stat-card card-warning skeleton-card" style="min-height:90px;">
+      <div class="skel-line" style="width:40%;height:1.8rem;border-radius:8px;margin-bottom:8px;"></div>
+      <div class="skel-line" style="width:70%;height:.8rem;border-radius:6px;"></div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;" id="chartsRow">
+
+    <!-- Health Score trend -->
+    <div class="glass-card" style="padding:24px;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h6 style="color:#f8fafc;margin:0;font-size:.95rem;">Health Score</h6>
+          <div class="text-secondary small">Pontuação de saúde ao longo do tempo</div>
+        </div>
+        <span id="healthTrend" class="badge bg-secondary bg-opacity-10 text-secondary">—</span>
+      </div>
+      <div id="healthScoreChart"></div>
+    </div>
+
+    <!-- Non-compliant trend -->
+    <div class="glass-card" style="padding:24px;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h6 style="color:#f8fafc;margin:0;font-size:.95rem;">Usuários Não Conformes</h6>
+          <div class="text-secondary small">Evolução da não conformidade</div>
+        </div>
+        <span id="nonCompliantTrend" class="badge bg-secondary bg-opacity-10 text-secondary">—</span>
+      </div>
+      <div id="nonCompliantChart"></div>
+    </div>
+  </div>
+
+  <!-- Second chart row -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;">
+
+    <!-- Multi-metric area chart -->
+    <div class="glass-card" style="padding:24px;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h6 style="color:#f8fafc;margin:0;font-size:.95rem;">Visão Multi-Indicador</h6>
+          <div class="text-secondary small">Total, Ativos, Bloqueados, Privilegiados</div>
+        </div>
+      </div>
+      <div id="multiMetricChart"></div>
+    </div>
+
+    <!-- Compliance score radar / bar -->
+    <div class="glass-card" style="padding:24px;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h6 style="color:#f8fafc;margin:0;font-size:.95rem;">Score de Conformidade</h6>
+          <div class="text-secondary small">Último snapshot</div>
+        </div>
+      </div>
+      <div id="complianceBarChart"></div>
+    </div>
+  </div>
+
+  <!-- Snapshots table -->
+  <div class="glass-card" style="padding:0;overflow:hidden;">
+    <div class="d-flex align-items-center justify-content-between p-4" style="border-bottom:1px solid rgba(255,255,255,.06);">
+      <h6 style="color:#f8fafc;margin:0;font-size:.95rem;">
+        <i class="bi bi-clock-history me-2" style="color:#38bdf8;"></i>
+        Registro de Snapshots
+      </h6>
+      <span class="badge bg-secondary bg-opacity-10 text-secondary" id="snapshotCount">— snapshots</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="snapshotsTable">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.06);">
+            <th class="small text-secondary fw-semibold" style="padding:12px 20px;">Data / Hora</th>
+            <th class="small text-secondary fw-semibold">Ambiente</th>
+            <th class="small text-secondary fw-semibold">Total</th>
+            <th class="small text-secondary fw-semibold">Ativos</th>
+            <th class="small text-secondary fw-semibold">Bloqueados</th>
+            <th class="small text-secondary fw-semibold">Não Conformes</th>
+            <th class="small text-secondary fw-semibold">Health Score</th>
+            <th class="small text-secondary fw-semibold">Score Conformidade</th>
+          </tr>
+        </thead>
+        <tbody id="snapshotsBody">
+          <tr><td colspan="8" class="text-center text-secondary py-4">Carregando snapshots...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Empty state (hidden by default) -->
+  <div id="historyEmptyState" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
+    <div style="width:80px;height:80px;border-radius:24px;background:rgba(56,189,248,0.08);display:flex;align-items:center;justify-content:center;margin-bottom:24px;">
+      <i class="bi bi-clock-history" style="font-size:2.2rem;color:#38bdf8;"></i>
+    </div>
+    <h4 style="color:#f8fafc;margin-bottom:12px;font-size:1.2rem;">Nenhum histórico ainda</h4>
+    <p style="color:#94a3b8;max-width:480px;font-size:.9rem;line-height:1.7;">
+      Os snapshots são criados automaticamente a cada ingest do coletor PowerShell.
+      Execute o script para começar a construir seu histórico de tendência.
+    </p>
+    <div style="margin-top:24px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 24px;">
+      <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:#38bdf8;margin-bottom:8px;">Coletor PowerShell</div>
+      <code style="color:#94a3b8;font-size:.82rem;">powershell -ExecutionPolicy Bypass -File .\scripts\report_ad.ps1</code>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedDays = 30;
+let selectedEnv = '';
+let chartInstances = {};
+
+// Chart base options
+const baseChartOpts = {
+  chart: { background: 'transparent', toolbar: { show: false }, animations: { enabled: true, speed: 400 } },
+  theme: { mode: 'dark' },
+  grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 4 },
+  tooltip: { theme: 'dark' },
+  xaxis: { labels: { style: { colors: '#94a3b8', fontSize: '11px' } } },
+  yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '11px' } } },
+};
+
+async function fetchHistory() {
+  const params = new URLSearchParams({ days: selectedDays });
+  if (selectedEnv) params.append('env', selectedEnv);
+  const res = await fetch(`/ad/api/history?${params}`);
+  const data = await res.json();
+  return data;
+}
+
+function formatTs(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) +
+    ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function trendBadge(values, elementId, higherIsBetter = true) {
+  const el = document.getElementById(elementId);
+  if (!el || values.length < 2) return;
+  const first = values[0], last = values[values.length - 1];
+  const diff = last - first;
+  const pct = first !== 0 ? Math.round(diff / first * 100) : 0;
+  const improved = higherIsBetter ? diff >= 0 : diff <= 0;
+  el.className = `badge ${improved ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'}`;
+  el.textContent = `${diff >= 0 ? '+' : ''}${pct}% vs início`;
+}
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+function renderHealthChart(labels, values) {
+  destroyChart('healthScoreChart');
+  chartInstances['healthScoreChart'] = new ApexCharts(document.getElementById('healthScoreChart'), {
+    ...baseChartOpts,
+    chart: { ...baseChartOpts.chart, type: 'area', height: 180 },
+    series: [{ name: 'Health Score (%)', data: values }],
+    xaxis: { ...baseChartOpts.xaxis, categories: labels },
+    yaxis: { ...baseChartOpts.yaxis, min: 0, max: 100 },
+    colors: ['#38bdf8'],
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05, stops: [0, 90, 100] } },
+    stroke: { curve: 'smooth', width: 2 },
+    markers: { size: values.length <= 10 ? 4 : 0 },
+  });
+  chartInstances['healthScoreChart'].render();
+  trendBadge(values, 'healthTrend', true);
+}
+
+function renderNonCompliantChart(labels, values) {
+  destroyChart('nonCompliantChart');
+  chartInstances['nonCompliantChart'] = new ApexCharts(document.getElementById('nonCompliantChart'), {
+    ...baseChartOpts,
+    chart: { ...baseChartOpts.chart, type: 'area', height: 180 },
+    series: [{ name: 'Não Conformes', data: values }],
+    xaxis: { ...baseChartOpts.xaxis, categories: labels },
+    colors: ['#f87171'],
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05, stops: [0, 90, 100] } },
+    stroke: { curve: 'smooth', width: 2 },
+    markers: { size: values.length <= 10 ? 4 : 0 },
+  });
+  chartInstances['nonCompliantChart'].render();
+  trendBadge(values, 'nonCompliantTrend', false);
+}
+
+function renderMultiMetricChart(labels, snapshots) {
+  destroyChart('multiMetricChart');
+  chartInstances['multiMetricChart'] = new ApexCharts(document.getElementById('multiMetricChart'), {
+    ...baseChartOpts,
+    chart: { ...baseChartOpts.chart, type: 'line', height: 220 },
+    series: [
+      { name: 'Total', data: snapshots.map(s => s.stats.total) },
+      { name: 'Ativos', data: snapshots.map(s => s.stats.active) },
+      { name: 'Bloqueados', data: snapshots.map(s => s.stats.lockedOut) },
+      { name: 'Privilegiados', data: snapshots.map(s => s.stats.privileged) },
+    ],
+    xaxis: { ...baseChartOpts.xaxis, categories: labels },
+    colors: ['#38bdf8', '#4ade80', '#f87171', '#fbbf24'],
+    stroke: { curve: 'smooth', width: [2, 2, 2, 2] },
+    markers: { size: labels.length <= 10 ? 3 : 0 },
+    legend: { labels: { colors: '#94a3b8' } },
+  });
+  chartInstances['multiMetricChart'].render();
+}
+
+function renderComplianceBar(lastSnap) {
+  destroyChart('complianceBarChart');
+  if (!lastSnap || !lastSnap.compliance) return;
+  const c = lastSnap.compliance;
+  const cats = ['Pass', 'Warn', 'Fail'];
+  const vals = [c.pass || 0, c.warn || 0, c.fail || 0];
+  chartInstances['complianceBarChart'] = new ApexCharts(document.getElementById('complianceBarChart'), {
+    ...baseChartOpts,
+    chart: { ...baseChartOpts.chart, type: 'donut', height: 220 },
+    series: vals,
+    labels: cats,
+    colors: ['#4ade80', '#fbbf24', '#f87171'],
+    plotOptions: { pie: { donut: { size: '65%', labels: {
+      show: true,
+      total: { show: true, label: 'Overall', color: '#94a3b8',
+               formatter: () => `${c.overallScore || 0}%` }
+    }}}},
+    legend: { position: 'bottom', labels: { colors: '#94a3b8' } },
+    dataLabels: { enabled: false },
+  });
+  chartInstances['complianceBarChart'].render();
+}
+
+function renderTrendCards(snapshots) {
+  if (!snapshots.length) return;
+  const last = snapshots[snapshots.length - 1];
+  const first = snapshots[0];
+  const delta = v => v !== undefined ? (v >= 0 ? `+${v}` : `${v}`) : '—';
+
+  function card(color, icon, label, value, deltaVal, higherGood) {
+    const dClass = (higherGood ? deltaVal >= 0 : deltaVal <= 0) ? 'text-success' : 'text-danger';
+    return `<div class="glass-card stat-card card-${color}">
+      <div class="stat-icon"><i class="bi bi-${icon}"></i></div>
+      <div class="stat-value">${value}</div>
+      <div class="stat-label">${label}</div>
+      <div class="small ${dClass} mt-1">${delta(deltaVal)} vs início</div>
+    </div>`;
+  }
+
+  const dHealth = last.stats.healthScore - first.stats.healthScore;
+  const dLocked = last.stats.lockedOut - first.stats.lockedOut;
+  const dNonC   = last.stats.nonCompliant - first.stats.nonCompliant;
+  const dPriv   = last.stats.privileged - first.stats.privileged;
+
+  document.getElementById('trendCards').innerHTML =
+    card('primary',  'heart-pulse',    'Health Score',     `${last.stats.healthScore}%`, dHealth, true) +
+    card('danger',   'lock-fill',      'Contas Bloqueadas', last.stats.lockedOut,         dLocked, false) +
+    card('warning',  'exclamation-triangle', 'Não Conformes', last.stats.nonCompliant,    dNonC,  false) +
+    card('info',     'shield-lock',    'Privilegiados',    last.stats.privileged,          dPriv,  false);
+}
+
+function renderSnapshotsTable(snapshots) {
+  const body = document.getElementById('snapshotsBody');
+  document.getElementById('snapshotCount').textContent = `${snapshots.length} snapshot${snapshots.length !== 1 ? 's' : ''}`;
+
+  if (!snapshots.length) {
+    body.innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-4">Nenhum snapshot no período selecionado.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = [...snapshots].reverse().map(s => {
+    const hs = s.stats.healthScore;
+    const hsCls = hs >= 80 ? 'text-success' : hs >= 60 ? 'text-warning' : 'text-danger';
+    return `<tr>
+      <td style="padding:12px 20px;" class="small">${formatTs(s.timestamp)}</td>
+      <td><span class="badge bg-secondary bg-opacity-10 text-secondary">${s.environment}</span></td>
+      <td class="small">${s.stats.total}</td>
+      <td class="small text-success">${s.stats.active}</td>
+      <td class="small ${s.stats.lockedOut > 0 ? 'text-danger fw-semibold' : 'text-secondary'}">${s.stats.lockedOut}</td>
+      <td class="small ${s.stats.nonCompliant > 0 ? 'text-warning' : 'text-secondary'}">${s.stats.nonCompliant}</td>
+      <td class="small fw-semibold ${hsCls}">${hs}%</td>
+      <td class="small">${s.compliance ? s.compliance.overallScore + '%' : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function populateEnvFilter(envs) {
+  const sel = document.getElementById('envFilter');
+  const cur = sel.value;
+  // Keep existing options that aren't in new list (don't flash)
+  envs.forEach(e => {
+    if (!sel.querySelector(`option[value="${e}"]`)) {
+      const opt = document.createElement('option');
+      opt.value = e; opt.textContent = e;
+      sel.appendChild(opt);
+    }
+  });
+  if (cur) sel.value = cur;
+}
+
+async function loadHistory() {
+  document.getElementById('historyEmptyState').style.display = 'none';
+  try {
+    const { snapshots, environments } = await fetchHistory();
+    populateEnvFilter(environments);
+
+    if (!snapshots.length) {
+      document.getElementById('trendCards').innerHTML = '';
+      document.getElementById('chartsRow').style.display = 'none';
+      document.getElementById('snapshotsBody').innerHTML =
+        '<tr><td colspan="8" class="text-center text-secondary py-4">Nenhum snapshot no período.</td></tr>';
+      document.getElementById('snapshotCount').textContent = '0 snapshots';
+      document.getElementById('historyEmptyState').style.display = 'flex';
+      document.getElementById('historyEmptyState').style.flexDirection = 'column';
+      return;
+    }
+
+    document.getElementById('chartsRow').style.display = '';
+    const labels = snapshots.map(s => formatTs(s.timestamp));
+    const health = snapshots.map(s => s.stats.healthScore);
+    const nonC   = snapshots.map(s => s.stats.nonCompliant);
+
+    renderTrendCards(snapshots);
+    renderHealthChart(labels, health);
+    renderNonCompliantChart(labels, nonC);
+    renderMultiMetricChart(labels, snapshots);
+    renderComplianceBar(snapshots[snapshots.length - 1]);
+    renderSnapshotsTable(snapshots);
+
+  } catch (err) {
+    console.error('Error loading history:', err);
+  }
+}
+
+// Events
+document.getElementById('refreshHistoryBtn').addEventListener('click', loadHistory);
+
+document.querySelectorAll('.days-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.days-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedDays = parseInt(btn.dataset.days);
+    loadHistory();
+  });
+});
+
+document.getElementById('envFilter').addEventListener('change', e => {
+  selectedEnv = e.target.value;
+  loadHistory();
+});
+
+// Initial load
+loadHistory();
+</script>
+{% endblock %}

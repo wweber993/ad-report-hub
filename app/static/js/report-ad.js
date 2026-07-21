@@ -4,6 +4,8 @@ let stats = {};
 let sortColumn = null;
 let sortDirection = 'asc';
 let createdDaysFilter = null;
+let currentPage = 0;
+const PAGE_SIZE = 50;
 let currentFilters = {
     all: true,
     privileged: false,
@@ -14,6 +16,10 @@ let currentFilters = {
     disabled: false,
     inactive90: false
 };
+
+function _csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
 
 const userListBody = document.getElementById('userListBody');
 const searchInput = document.getElementById('userSearch');
@@ -30,14 +36,50 @@ async function fetchData() {
             fetch('/ad/api/users'),
             fetch('/ad/api/stats')
         ]);
-        
+
         allUsers = await usersRes.json();
         stats = await statsRes.json();
-        
+
+        if (allUsers.length === 0 && !stats.total) {
+            showEmptyState();
+            return;
+        }
+
+        hideEmptyState();
         updateDashboard();
     } catch (err) {
         console.error('Error fetching data:', err);
     }
+}
+
+function showEmptyState() {
+    document.getElementById('summaryCards').innerHTML = '';
+    const existing = document.getElementById('emptyState');
+    if (existing) return;
+    const es = document.createElement('div');
+    es.id = 'emptyState';
+    es.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;';
+    es.innerHTML = `
+        <div style="width:80px;height:80px;border-radius:24px;background:rgba(56,189,248,0.08);display:flex;align-items:center;justify-content:center;margin-bottom:24px;">
+            <i class="bi bi-inbox" style="font-size:2.2rem;color:#38bdf8;"></i>
+        </div>
+        <h4 style="color:#f8fafc;margin-bottom:12px;font-size:1.2rem;">Nenhum dado importado ainda</h4>
+        <p style="color:#94a3b8;max-width:480px;font-size:.9rem;line-height:1.7;">
+            Execute o coletor PowerShell no seu servidor Active Directory para importar o primeiro relatório.
+            Os dados aparecerão automaticamente aqui.
+        </p>
+        <div style="margin-top:28px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:20px 28px;text-align:left;">
+            <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:#38bdf8;margin-bottom:10px;">Como começar</div>
+            <code style="color:#94a3b8;font-size:.82rem;">
+                powershell -ExecutionPolicy Bypass -File .\scripts\report_ad.ps1
+            </code>
+        </div>
+    `;
+    document.querySelector('.fade-up').prepend(es);
+}
+
+function hideEmptyState() {
+    document.getElementById('emptyState')?.remove();
 }
 
 function updateDashboard() {
@@ -181,6 +223,7 @@ function applyFiltersAndSearch() {
         return matchesSearch && matchesEnv && matchesStatus && matchesCreated;
     });
 
+    currentPage = 0;
     applySort();
     updateFilterUI();
     renderTable();
@@ -229,7 +272,11 @@ function updateFilterUI() {
 }
 
 function renderTable() {
-    userListBody.innerHTML = filteredUsers.map(user => `
+    const start = currentPage * PAGE_SIZE;
+    const pageUsers = filteredUsers.slice(start, start + PAGE_SIZE);
+    const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
+
+    userListBody.innerHTML = pageUsers.map(user => `
         <tr onclick="openUserDetails('${user.Username}')" style="cursor: pointer">
             <td>
                 <div class="d-flex align-items-center gap-2">
@@ -260,7 +307,47 @@ function renderTable() {
             </td>
         </tr>
     `).join('');
+
+    // Pagination controls
+    renderPagination(totalPages);
     lucide.createIcons();
+}
+
+function renderPagination(totalPages) {
+    let pg = document.getElementById('tablePagination');
+    if (!pg) {
+        pg = document.createElement('div');
+        pg.id = 'tablePagination';
+        pg.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid rgba(255,255,255,0.05);';
+        document.querySelector('.table-responsive').parentElement.appendChild(pg);
+    }
+
+    if (totalPages <= 1) {
+        pg.innerHTML = `<span class="text-secondary small">${filteredUsers.length} resultado(s)</span>`;
+        return;
+    }
+
+    const start = currentPage * PAGE_SIZE + 1;
+    const end   = Math.min((currentPage + 1) * PAGE_SIZE, filteredUsers.length);
+    pg.innerHTML = `
+        <span class="text-secondary small">${start}–${end} de ${filteredUsers.length} usuários</span>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="changePage(-1)" ${currentPage === 0 ? 'disabled' : ''}>
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="text-secondary small d-flex align-items-center px-2">Pág. ${currentPage + 1} / ${totalPages}</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="changePage(1)" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    `;
+}
+
+function changePage(delta) {
+    const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
+    currentPage = Math.max(0, Math.min(currentPage + delta, totalPages - 1));
+    renderTable();
+    document.getElementById('usersTable')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function exportToCSV() {
@@ -422,7 +509,7 @@ async function saveException() {
         return;
     }
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const csrfToken = _csrfToken();
     try {
         const res = await fetch(`/ad/api/exceptions/${currentModalUser.Username}`, {
             method: 'POST',
@@ -447,7 +534,7 @@ async function saveException() {
 async function removeException() {
     if (!confirm("Tem certeza que deseja remover esta exceção? O usuário voltará a ser avaliado pelas regras globais.")) return;
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const csrfToken = _csrfToken();
     try {
         const res = await fetch(`/ad/api/exceptions/${currentModalUser.Username}`, {
             method: 'DELETE',
@@ -501,6 +588,19 @@ function toggleSort(col) {
     } else {
         sortColumn = col;
         sortDirection = 'asc';
+    }
+    // Update sort indicator icons
+    document.querySelectorAll('#usersTable th').forEach(th => {
+        th.querySelectorAll('.sort-icon').forEach(el => el.remove());
+    });
+    const headers = ['name','email','department','environment','lastLogon','status','risk'];
+    const thIdx = headers.indexOf(col);
+    const ths = document.querySelectorAll('#usersTable th');
+    if (thIdx >= 0 && ths[thIdx]) {
+        const icon = document.createElement('i');
+        icon.className = `bi bi-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-icon ms-1`;
+        icon.style.fontSize = '.75rem';
+        ths[thIdx].appendChild(icon);
     }
     applySort();
     renderTable();

@@ -8,6 +8,7 @@ Usage:
 
 import sys
 import os
+import getpass
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -20,9 +21,14 @@ def main():
     with app.app_context():
         print("\n── AD Report Hub Admin Creation ──────────────────────")
 
-        username = input("  Username: ").strip()
-        email    = input("  E-mail  : ").strip()
-        password = input("  Password: ").strip()
+        username = input("  Username : ").strip()
+        email    = input("  E-mail   : ").strip()
+        password = getpass.getpass("  Password : ")
+        confirm  = getpass.getpass("  Confirm  : ")
+
+        if password != confirm:
+            print("  ✘  As senhas não coincidem.")
+            sys.exit(1)
 
         if not username or not email or not password:
             print("  ✖  All fields are required.")

@@ -99,3 +99,38 @@ class User(UserMixin, db.Model):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<User {self.username}>"
+
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+
+    id        = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    username  = db.Column(db.String(80), nullable=False, index=True)
+    action    = db.Column(db.String(120), nullable=False)
+    target    = db.Column(db.String(120), nullable=True)
+    details   = db.Column(db.Text, nullable=True)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<AuditLog {self.timestamp} {self.username} {self.action}>"
+
+
+def log_audit(username: str, action: str, target: str = None, details: str = None):
+    """
+    Helper function to record an action in the audit log.
+    If there is no database session available or it fails, logs to python logger.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        entry = AuditLog(
+            username=username,
+            action=action,
+            target=target,
+            details=details
+        )
+        db.session.add(entry)
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("Failed to write to AuditLog: %s (action=%s, target=%s)", exc, action, target)

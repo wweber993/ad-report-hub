@@ -10,3 +10,6 @@ apscheduler>=3.10.4
 flask-caching>=2.1.0
 pyotp>=2.9.0
 qrcode[pil]>=7.4.2
+Flask-Migrate>=4.0.5
+pytest>=8.0.0
+pytest-flask>=1.3.0

@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dateutil import parser as dateutil_parser
 
@@ -360,6 +360,13 @@ def calculate_iso_soc_compliance(users: list) -> dict:
         and not u.get("isException")
     ]
 
+    cis_inactive_enabled = [
+        u for u in enabled_users
+        if u.get("DaysSinceLastLogon") is not None
+        and u["DaysSinceLastLogon"] > 45
+        and not u.get("isException")
+    ]
+
     privileged_inactive = [
         u for u in privileged
         if u.get("DaysSinceLastLogon") is not None
@@ -533,6 +540,46 @@ def calculate_iso_soc_compliance(users: list) -> dict:
             "count": len(locked_out),
             "recommendation": "Configure alertas em tempo real para bloqueios de contas. Investigue a causa antes de desbloquear. Integre logs do AD com SIEM para correlação de eventos.",
         },
+        # ── CIS Controls v8.1 ──────────────────────────────────────
+        {
+            "id": "CIS 5.3",
+            "framework": "CIS Controls",
+            "domain": "Account Management",
+            "title": "Desativar Contas Dormentes",
+            "description": "Desative ou remova quaisquer contas inativas por um período superior a 45 dias, a fim de minimizar o vetor de ataque em credenciais abandonadas.",
+            "rule": "Contas habilitadas sem logon há mais de 45 dias",
+            "status": _status(cis_inactive_enabled, warn_threshold=2),
+            "score": _compliance_pct(cis_inactive_enabled, enabled_users),
+            "violations": _user_list(cis_inactive_enabled),
+            "count": len(cis_inactive_enabled),
+            "recommendation": "Programe um script para desativar automaticamente contas sem login há 45 dias. Documente exceções para serviços de long-running batch jobs.",
+        },
+        {
+            "id": "CIS 5.2",
+            "framework": "CIS Controls",
+            "domain": "Account Management",
+            "title": "Uso de Senhas Únicas e Seguras",
+            "description": "Exigir a rotação e uso de credenciais seguras, desencorajando contas que possuem flag de 'PasswordNeverExpires' configurada.",
+            "rule": "Usuários com senha permanente (PasswordNeverExpires)",
+            "status": _status(pwd_never_expires, warn_threshold=0),
+            "score": _compliance_pct(pwd_never_expires, enabled_users),
+            "violations": _user_list(pwd_never_expires),
+            "count": len(pwd_never_expires),
+            "recommendation": "Remova a flag 'Senha nunca expira' de contas ativas. Implemente políticas baseadas em Fine-Grained Passwords para credenciais de serviço, rotacionando anualmente.",
+        },
+        {
+            "id": "CIS 6.2",
+            "framework": "CIS Controls",
+            "domain": "Access Control Management",
+            "title": "Revogar Acessos Pós-Desligamento",
+            "description": "Revogar rapidamente privilégios assim que o funcionário for desligado. Contas desativadas não podem manter acessos de administradores.",
+            "rule": "Contas desativadas com grupos de privilégio",
+            "status": _status(disabled_privileged, warn_threshold=0),
+            "score": _compliance_pct(disabled_privileged, disabled_users) if disabled_users else 100,
+            "violations": _user_list(disabled_privileged),
+            "count": len(disabled_privileged),
+            "recommendation": "Certifique-se de que o processo de offboarding remove todos os grupos dos usuários desativados (ou os mova para uma OU restrita sem permissões).",
+        },
     ]
 
     pass_count    = sum(1 for c in controls if c["status"] == "PASS")
@@ -551,3 +598,94 @@ def calculate_iso_soc_compliance(users: list) -> dict:
             "overallScore": overall_score,
         },
     }
+
+
+# ── Snapshot / History ──────────────────────────────────────────────────────
+
+def _snapshot_dir(data_dir: str) -> str:
+    return os.path.join(data_dir, "snapshots")
+
+
+def write_snapshot(data_dir: str, environment: str, stats: dict, compliance_summary: dict) -> str:
+    """
+    Persist a compact metrics snapshot for the given ingest event.
+    Stores in data_dir/snapshots/<env>/<YYYYMMDD_HHMMSS>.json
+    Returns the path written.
+    """
+    env_slug = environment.replace(" ", "_").lower()
+    snap_dir = os.path.join(_snapshot_dir(data_dir), env_slug)
+    os.makedirs(snap_dir, exist_ok=True)
+
+    ts = datetime.now()
+    filename = ts.strftime("%Y%m%d_%H%M%S") + ".json"
+    path = os.path.join(snap_dir, filename)
+
+    payload = {
+        "timestamp": ts.isoformat(),
+        "environment": environment,
+        "stats": {
+            "total":        stats.get("total", 0),
+            "active":       stats.get("active", 0),
+            "inactive":     stats.get("inactive", 0),
+            "lockedOut":    stats.get("lockedOut", 0),
+            "nonCompliant": stats.get("nonCompliant", 0),
+            "privileged":   stats.get("privileged", 0),
+            "highRiskUsers": stats.get("highRiskUsers", 0),
+            "healthScore":  stats.get("healthScore", 0),
+        },
+        "compliance": compliance_summary,
+    }
+    write_json(path, payload)
+    logger.info("Snapshot written: %s", path)
+    return path
+
+
+def purge_old_snapshots(data_dir: str, retention_days: int = 90) -> int:
+    """
+    Delete snapshots older than retention_days. Returns count deleted.
+    """
+    cutoff = datetime.now() - timedelta(days=retention_days)
+    snap_base = _snapshot_dir(data_dir)
+    deleted = 0
+    for path in glob.glob(os.path.join(snap_base, "**", "*.json"), recursive=True):
+        try:
+            mtime = datetime.fromtimestamp(os.path.getmtime(path))
+            if mtime < cutoff:
+                os.remove(path)
+                deleted += 1
+        except Exception as exc:
+            logger.warning("Could not purge snapshot %s: %s", path, exc)
+    if deleted:
+        logger.info("Purged %d old snapshots (retention=%d days)", deleted, retention_days)
+    return deleted
+
+
+def load_history_snapshots(data_dir: str, environment: str = None, days: int = 30) -> list:
+    """
+    Load compact snapshots for the given environment (or all envs) within the last N days.
+    Returns list of snapshot dicts sorted by timestamp ascending.
+    """
+    snap_base = _snapshot_dir(data_dir)
+    cutoff = datetime.now() - timedelta(days=days)
+
+    if environment:
+        env_slug = environment.replace(" ", "_").lower()
+        pattern = os.path.join(snap_base, env_slug, "*.json")
+    else:
+        pattern = os.path.join(snap_base, "**", "*.json")
+
+    results = []
+    for path in glob.glob(pattern, recursive=True):
+        try:
+            data = _read_json(path, default={})
+            if not data:
+                continue
+            ts_str = data.get("timestamp", "")
+            ts = datetime.fromisoformat(ts_str) if ts_str else None
+            if ts and ts >= cutoff:
+                results.append(data)
+        except Exception as exc:
+            logger.warning("Could not load snapshot %s: %s", path, exc)
+
+    results.sort(key=lambda x: x.get("timestamp", ""))
+    return results

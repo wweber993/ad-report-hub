@@ -36,6 +36,15 @@ class Config:
     AD_DATA_DIR: str   = os.getenv("AD_DATA_DIR", os.path.join(BASE_DIR, "data", "ad"))
     INGEST_TOKEN: str  = os.getenv("INGEST_TOKEN", "")
 
+    # Snapshot history retention
+    SNAPSHOT_RETENTION_DAYS: int = int(os.getenv("SNAPSHOT_RETENTION_DAYS", "90"))
+
+    # Webhook / Alerting
+    WEBHOOK_URL: str              = os.getenv("WEBHOOK_URL", "")
+    ALERT_HEALTH_THRESHOLD: int   = int(os.getenv("ALERT_HEALTH_THRESHOLD", "60"))
+    ALERT_LOCKED_THRESHOLD: int   = int(os.getenv("ALERT_LOCKED_THRESHOLD", "0"))
+    ALERT_NONCOMPLIANT_PCT: int   = int(os.getenv("ALERT_NONCOMPLIANT_PCT", "30"))
+
     # Flask-Caching
     CACHE_TYPE: str            = "SimpleCache"
     CACHE_DEFAULT_TIMEOUT: int = 300

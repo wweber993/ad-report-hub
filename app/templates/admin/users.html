@@ -242,6 +242,12 @@
                     style="flex:1;justify-content:center;font-size:0.82rem;">
               <i class="bi bi-key-fill"></i> Redefinir Senha
             </button>
+            <button type="button" id="btnResetMFA" class="btn-hub btn-secondary" onclick="doResetMFA()"
+                    style="flex:1;justify-content:center;font-size:0.82rem;">
+              <i class="bi bi-phone-vibrate"></i> Resetar MFA
+            </button>
+          </div>
+          <div style="display:flex;gap:8px;">
             <button type="button" id="btnUnlock" class="btn-hub btn-secondary" onclick="doUnlock()"
                     style="display:none;flex:1;justify-content:center;font-size:0.82rem;">
               <i class="bi bi-unlock-fill"></i> Desbloquear
@@ -394,6 +400,7 @@ function selectUser(card) {
 
   document.getElementById('lblAdmin').textContent = isAdmin ? 'Remover Admin' : 'Tornar Admin';
   document.getElementById('btnToggleAdmin').style.display = isSelf ? 'none' : '';
+  document.getElementById('btnResetMFA').style.display = isSelf ? 'none' : '';
   document.getElementById('btnUnlock').style.display = isLocked ? 'flex' : 'none';
   document.getElementById('btnDelete').style.display = isSelf ? 'none' : '';
 
@@ -438,6 +445,23 @@ function doResetPwd() {
   openConfirm('Redefinir Senha', 'Gerar nova senha para <strong>' + name + '</strong>?', function() {
     document.getElementById('frmReset').action = '/admin/users/' + activeUid + '/reset-password';
     document.getElementById('frmReset').submit();
+  });
+}
+
+/* reset mfa */
+function doResetMFA() {
+  if (!activeUid) return;
+  var name = document.getElementById('fUser').value;
+  openConfirm('Resetar MFA', 'Isso fará com que <strong>' + name + '</strong> precise configurar o Autenticador novamente no próximo login.', function() {
+    fetch('/admin/users/' + activeUid + '/reset-mfa', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': CSRF, 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { showToast(data.error, 'danger'); return; }
+      showToast(data.message, 'success');
+    });
   });
 }
 

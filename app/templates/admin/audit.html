@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Log de Auditoria{% endblock %}
+
+{% block breadcrumb %}
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span>Administração</span>
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span class="bc-current">Log de Auditoria</span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.audit-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+}
+.audit-table td {
+  padding: 12px 20px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+.audit-action {
+  font-family: monospace;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+.audit-details {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.search-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 8px 12px 8px 36px;
+  width: 250px;
+  outline: none;
+  font-size: 0.85rem;
+}
+.search-box:focus {
+  border-color: var(--accent);
+}
+.search-wrapper {
+  position: relative;
+}
+.search-wrapper i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+  <div class="page-header" style="margin-bottom:24px;">
+    <div class="page-title">
+      <div class="page-title-icon" style="background:rgba(56, 189, 248, 0.1);color:var(--accent);">
+        <i class="bi bi-journal-text"></i>
+      </div>
+      Log de Auditoria
+    </div>
+    
+    <div class="search-wrapper">
+      <i class="bi bi-search"></i>
+      <input type="text" id="auditSearch" class="search-box" placeholder="Buscar logs..." oninput="filterLogs()">
+    </div>
+  </div>
+
+  <div class="card-hub" style="padding:0; overflow-x:auto;">
+    <table class="table table-borderless audit-table mb-0" id="auditTable">
+      <thead>
+        <tr>
+          <th>Data / Hora</th>
+          <th>Usuário (Autor)</th>
+          <th>Ação</th>
+          <th>Alvo</th>
+          <th>Detalhes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr class="log-row">
+          <td style="white-space: nowrap; color: var(--text-secondary);">
+            {{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}
+          </td>
+          <td class="fw-semibold">{{ log.username }}</td>
+          <td><span class="audit-action">{{ log.action }}</span></td>
+          <td>{{ log.target or '-' }}</td>
+          <td class="audit-details">{{ log.details or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox" style="font-size:2rem; display:block; margin-bottom:10px; opacity:0.5;"></i>
+            Nenhum registro de auditoria encontrado.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterLogs() {
+  const q = document.getElementById('auditSearch').value.toLowerCase();
+  const rows = document.querySelectorAll('.log-row');
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

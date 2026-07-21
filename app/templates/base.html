@@ -76,6 +76,11 @@
             <i class="bi bi-patch-check nav-link-icon"></i>
             ISO / SOC
           </a>
+          <a href="{{ url_for('ad.history') }}"
+             class="nav-link {% if page == 'ad_history' %}active{% endif %}">
+            <i class="bi bi-graph-up-arrow nav-link-icon"></i>
+            Histórico
+          </a>
         </div>
       </div>
       {% endif %}
@@ -93,10 +98,15 @@
         </div>
         <div class="nav-group-items {% if page and page.startswith('admin_') %}open{% endif %}"
              id="nav-admin">
-          <a href="{{ url_for('admin.users') }}"
+          <a href="{{ url_for('admin.users') }}" 
              class="nav-link {% if page == 'admin_users' %}active{% endif %}">
-            <i class="bi bi-people-fill nav-link-icon"></i>
+            <i class="bi bi-people-fill nav-link-icon"></i> 
             Usuários
+          </a>
+          <a href="{{ url_for('admin.audit') }}" 
+             class="nav-link {% if page == 'admin_audit' %}active{% endif %}">
+            <i class="bi bi-journal-text nav-link-icon"></i> 
+            Log de Auditoria
           </a>
         </div>
       </div>
@@ -147,7 +157,7 @@
 
       <!-- Breadcrumb -->
       <div class="topbar-breadcrumb">
-        <span>CyberHub</span>
+        <a href="{{ url_for('ad.dashboard') }}" style="color:inherit;text-decoration:none;">AD Report Hub</a>
         {% block breadcrumb %}{% endblock %}
       </div>
 

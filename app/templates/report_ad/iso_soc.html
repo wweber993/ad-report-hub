@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Report AD — ISO/SOC Compliance{% endblock %}
+{% block title %}Report AD — Compliance Multi-Framework{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/report-ad.css') }}">
@@ -9,7 +9,7 @@
   <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
   <span>Report AD</span>
   <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
-  <span class="bc-current">ISO / SOC</span>
+  <span class="bc-current">Compliance</span>
 {% endblock %}
 
 {% block topbar_actions %}
@@ -54,8 +54,15 @@
           <small class="text-secondary">SOC 2 Type II</small>
           <small id="socScore" class="fw-bold text-warning">—%</small>
         </div>
-        <div class="progress" style="height:6px;background:rgba(255,255,255,.05);border-radius:4px;">
+        <div class="progress mb-3" style="height:6px;background:rgba(255,255,255,.05);border-radius:4px;">
           <div id="socBar" class="progress-bar bg-warning" style="width:0%"></div>
+        </div>
+        <div class="mb-2 d-flex justify-content-between align-items-center">
+          <small class="text-secondary">CIS Controls</small>
+          <small id="cisScore" class="fw-bold" style="color:#a855f7">—%</small>
+        </div>
+        <div class="progress" style="height:6px;background:rgba(255,255,255,.05);border-radius:4px;">
+          <div id="cisBar" class="progress-bar" style="background-color:#a855f7;width:0%"></div>
         </div>
       </div>
     </div>
@@ -67,6 +74,7 @@
           <button class="isoc-filter-btn active" data-fw="all">Todos</button>
           <button class="isoc-filter-btn" data-fw="ISO 27001"><i class="bi bi-award me-1"></i>ISO 27001</button>
           <button class="isoc-filter-btn" data-fw="SOC 2"><i class="bi bi-patch-check me-1"></i>SOC 2</button>
+          <button class="isoc-filter-btn" data-fw="CIS Controls"><i class="bi bi-shield-lock me-1"></i>CIS Controls</button>
         </div>
       </div>
       <div id="controlsChart"></div>
@@ -217,16 +225,21 @@ function renderSummary(summary, totalUsers) {
   /* Per-framework mini scores */
   const isoControls = allControls.filter(c => c.framework === 'ISO 27001');
   const socControls = allControls.filter(c => c.framework === 'SOC 2');
+  const cisControls = allControls.filter(c => c.framework === 'CIS Controls');
 
   const isoAvg = isoControls.length
     ? Math.round(isoControls.reduce((s, c) => s + c.score, 0) / isoControls.length) : 0;
   const socAvg = socControls.length
     ? Math.round(socControls.reduce((s, c) => s + c.score, 0) / socControls.length) : 0;
+  const cisAvg = cisControls.length
+    ? Math.round(cisControls.reduce((s, c) => s + c.score, 0) / cisControls.length) : 0;
 
   document.getElementById('isoScore').textContent = isoAvg + '%';
   document.getElementById('isoBar').style.width   = isoAvg + '%';
   document.getElementById('socScore').textContent = socAvg + '%';
   document.getElementById('socBar').style.width   = socAvg + '%';
+  document.getElementById('cisScore').textContent = cisAvg + '%';
+  document.getElementById('cisBar').style.width   = cisAvg + '%';
 }
 
 /* ── Controls List ──────────────────────────────────────────────── */
@@ -258,7 +271,7 @@ function renderControls() {
       <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
         <div class="flex-grow-1" style="min-width:0;">
           <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-            <span class="isoc-badge-framework ${c.framework === 'ISO 27001' ? 'iso' : 'soc'}">${c.framework}</span>
+            <span class="isoc-badge-framework ${c.framework === 'ISO 27001' ? 'iso' : c.framework === 'SOC 2' ? 'soc' : 'cis'}">${c.framework}</span>
             <span class="isoc-control-id">${c.id}</span>
             <span class="text-secondary small">${c.domain}</span>
           </div>
@@ -342,7 +355,7 @@ function updateChart() {
 function openViolationModal(control) {
   document.getElementById('vmFrameworkBadge').textContent = control.framework;
   document.getElementById('vmFrameworkBadge').className =
-    'isoc-badge-framework ' + (control.framework === 'ISO 27001' ? 'iso' : 'soc');
+    'isoc-badge-framework ' + (control.framework === 'ISO 27001' ? 'iso' : control.framework === 'SOC 2' ? 'soc' : 'cis');
   document.getElementById('vmControlId').textContent    = control.id + ' — ' + control.domain;
   document.getElementById('vmTitle').textContent        = control.title;
   document.getElementById('vmDescription').textContent  = control.description;
