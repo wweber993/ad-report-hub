@@ -30,38 +30,50 @@ param (
 # ==============================================================================
 
 $CONFIG = @{
-    # Target domain/environment label (e.g., "Production", "Headquarters")
+    # EN: Target domain/environment label (e.g., "Production", "Headquarters")
+    # PT: Rótulo do domínio/ambiente alvo (ex: "Produção", "Matriz")
     Environment = "Production"
 
-    # Single Distinguished Name (DN) OU base to search users from.
-    # Leave empty to search the entire domain.
+    # EN: Single Distinguished Name (DN) OU base to search users from.
+    # EN: Leave empty to search the entire domain.
+    # PT: Unidade Organizacional (OU/DN) única base para buscar usuários.
+    # PT: Deixe vazio para buscar em todo o domínio.
     SearchBase = ""
 
-    # Array of OU Distinguished Names to query multiple OUs.
+    # EN: Array of OU Distinguished Names to query multiple OUs.
+    # PT: Lista (Array) de Unidades Organizacionais (DN) para consultar múltiplas OUs.
     SearchBases = @()
 
-    # Optional Distinguished Name (DN) to query privileged accounts domain-wide.
+    # EN: Optional Distinguished Name (DN) to query privileged accounts domain-wide.
+    # PT: Distinguished Name (DN) opcional para consultar contas privilegiadas em todo o domínio.
     SearchPrivilege = ""
 
-    # Array of OU Distinguished Names to exclude from user collection.
+    # EN: Array of OU Distinguished Names to exclude from user collection.
+    # PT: Lista (Array) de OUs (DN) para excluir da coleta de usuários.
     ExcludedOUs = @()
 
-    # Threshold in days to flag accounts as inactive based on last logon.
+    # EN: Threshold in days to flag accounts as inactive based on last logon.
+    # PT: Limite de dias sem logon para marcar uma conta como inativa.
     InactiveDays = 60
 
-    # Fallback password max age in days if domain password policy is unreachable.
+    # EN: Fallback password max age in days if domain password policy is unreachable.
+    # PT: Idade máxima da senha (em dias) caso a política de senha do domínio seja inacessível.
     PasswordMaxAgeDays = 60
 
-    # Auto-discover Domain Controllers dynamically. If $false, fill DomainControllers array.
+    # EN: Auto-discover Domain Controllers dynamically. If $false, fill DomainControllers array.
+    # PT: Descobrir Controladores de Domínio automaticamente. Se $false, preencha o array DomainControllers.
     UseAutoDC = $true
     DomainControllers = @()
 
-    # AD Report Hub API settings
+    # EN: AD Report Hub API settings
+    # PT: Configurações de API do AD Report Hub
     ApiUrl = "http://localhost:8090/ad/api/ingest"
     ApiToken = "your_secret_ingest_token_here"
 
-    # Optional file path to save the generated report JSON locally (e.g., "C:\Reports\ad_report.json").
-    # Leave empty to not save locally.
+    # EN: Optional file path to save the generated report JSON locally (e.g., "C:\Reports\ad_report.json").
+    # EN: Leave empty to not save locally.
+    # PT: Caminho opcional do arquivo para salvar o relatório JSON localmente (ex: "C:\Reports\ad_report.json").
+    # PT: Deixe vazio para não salvar localmente.
     OutputFile = ""
 }
 
