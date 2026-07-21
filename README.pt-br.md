@@ -39,62 +39,81 @@ Active Directory (Controlador de Domínio)
 ## 🛠️ Guia de Início Rápido
 
 ### Pré-requisitos
-- **Python 3.9+**
-- **PowerShell 5.1+** com o módulo RSAT `ActiveDirectory` instalado no Controlador de Domínio ou em uma máquina de gerenciamento ingressada no domínio.
+- **Ubuntu 24.04 LTS (Recomendado)** ou qualquer distribuição Linux moderna para a aplicação web.
+- **Python 3.10+** (Python 3.12 padrão do Ubuntu 24.04 é totalmente suportado).
+- **PowerShell 5.1+** com o módulo RSAT `ActiveDirectory` (Rodando separadamente no Controlador de Domínio Windows).
 
-### 1. Instalação (Windows)
+> [!NOTE]
+> **Arquitetura Multi-Ambiente**: O AD Report Hub foi projetado para rodar seu painel web em um servidor Linux seguro (ex: Ubuntu 24.04), enquanto o script leve de coleta de dados (`report_ad.ps1`) roda de forma independente no seu servidor Active Directory (Windows). Eles se comunicam de forma segura via HTTPS/API.
 
-A maneira mais fácil de começar é utilizando o instalador automatizado integrado para Windows:
+### 1. Instalação (Linux / Ubuntu 24.04)
 
-```powershell
-git clone https://github.com/wweber993/ad-report-hub.git
-cd ad-report-hub
-
-# Execute o assistente de instalação
-.\install_hub.ps1
-```
-
-O instalador solicitará interativamente as configurações necessárias (porta, token de ingestão), criará um ambiente virtual Python, instalará as dependências e ajudará a criar a primeira conta de Administrador.
-
-### 2. Instalação Manual (Linux / macOS)
-
-Se você não estiver no Windows, pode instalar a plataforma manualmente:
+Para um ambiente de produção, recomendamos implantar a aplicação em `/opt/report-hub`.
 
 ```bash
-git clone https://github.com/wweber993/ad-report-hub.git
-cd ad-report-hub
+# 1. Atualizar e instalar dependências
+sudo apt update
+sudo apt install python3 python3-venv python3-pip git -y
 
+# 2. Clonar repositório para /opt
+cd /opt
+sudo git clone https://github.com/wweber993/ad-report-hub.git report-hub
+sudo chown -R $USER:$USER /opt/report-hub
+cd report-hub
+
+# 3. Criar ambiente virtual e instalar pacotes
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
+# 4. Configurar variáveis de ambiente
 cp .env.example .env
-# Edite o arquivo .env para definir o INGEST_TOKEN e a porta (PORT)
+# Edite o arquivo .env para definir seu INGEST_TOKEN, PORT e WEBHOOK_URL
+nano .env
 
+# 5. Inicializar banco de dados e criar primeiro administrador
+flask db upgrade
 python create_admin.py
 ```
 
-### 3. Executando a Aplicação Web
+### 2. Executando a Aplicação (Systemd + Gunicorn)
 
-Inicie a aplicação utilizando o ambiente virtual:
+Para manter a aplicação rodando em segundo plano, você pode configurar um serviço Systemd.
+Crie um arquivo em `/etc/systemd/system/report-hub.service`:
 
-#### Windows:
-```powershell
-.\venv\Scripts\python app.py
+```ini
+[Unit]
+Description=AD Report Hub Daemon
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/report-hub
+Environment="PATH=/opt/report-hub/venv/bin"
+ExecStart=/opt/report-hub/venv/bin/gunicorn -w 4 -b 0.0.0.0:8090 app:app
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-#### Linux/macOS:
+Em seguida, habilite e inicie o serviço:
 ```bash
-python app.py
+sudo systemctl daemon-reload
+sudo systemctl enable report-hub
+sudo systemctl start report-hub
 ```
 
-#### Modo de Produção (Gunicorn/Linux):
-```bash
-gunicorn -w 2 -b 0.0.0.0:8090 'app:app'
-```
-
-Acesse a aplicação no navegador em: `http://localhost:8090/`
+Acesse a aplicação no navegador em: `http://<seu-ip-do-servidor>:8090/`
 *Nota: No seu primeiro acesso, você será solicitado a configurar o seu Aplicativo Autenticador (Google Authenticator / Authy) para a Autenticação em Duas Etapas (MFA).*
+
+### 3. Instalação Alternativa (Windows / Local)
+Se preferir testar a aplicação localmente no Windows, um script de instalação automatizado está disponível:
+```powershell
+git clone https://github.com/wweber993/ad-report-hub.git
+cd ad-report-hub
+.\install_hub.ps1
+```
 
 ---
 

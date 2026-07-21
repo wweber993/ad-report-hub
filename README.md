@@ -48,26 +48,16 @@ Active Directory (Domain Controller)
 ## 🛠️ Quick Start Guide
 
 ### Prerequisites
-- **Python 3.9+**
-- **PowerShell 5.1+** with the `ActiveDirectory` RSAT module installed on the Domain Controller or domain-joined management machine.
+- **Ubuntu 24.04 LTS (Recommended)** or any modern Linux distribution for the web application.
+- **Python 3.10+** (Python 3.12 default on Ubuntu 24.04 is fully supported).
+- **PowerShell 5.1+** with the `ActiveDirectory` RSAT module (Runs separately on the Windows Domain Controller).
 
-### 1. Installation
+> [!NOTE]
+> **Multi-Environment Architecture**: The AD Report Hub is designed to run its web dashboard on a secure Linux server (e.g., Ubuntu 24.04), while the lightweight data collector script (`report_ad.ps1`) runs independently on your Windows Active Directory server. They communicate securely via HTTPS/API.
 
-The easiest way to get started is by using the built-in automated installer for Windows:
+### 1. Installation (Linux / Ubuntu 24.04)
 
-```powershell
-git clone https://github.com/wweber993/ad-report-hub.git
-cd ad-report-hub
-
-# Run the automated installer wizard
-.\install_hub.ps1
-```
-
-The installer will interactively prompt you for the necessary configurations (port, ingestion token), set up a Python virtual environment, install all dependencies, and help you create the first Administrator account.
-
-### 2. Manual Installation (Linux Production Server)
-
-For a production environment on Linux (e.g., Ubuntu/Debian), we recommend deploying the application under `/opt/report-hub`.
+For a production environment, we recommend deploying the application under `/opt/report-hub`.
 
 ```bash
 # 1. Update and install dependencies
@@ -95,23 +85,7 @@ flask db upgrade
 python create_admin.py
 ```
 
-### 3. Run Web Application
-
-Start the web application using the virtual environment:
-
-#### Windows:
-```powershell
-.\venv\Scripts\python app.py
-```
-
-#### Linux/macOS (Development):
-```bash
-python app.py
-```
-
-#### Production Mode (Systemd + Gunicorn on Linux):
-To keep the application running in the background, you can set up a Systemd service.
-Create a file at `/etc/systemd/system/report-hub.service`:
+### 2. Run Web Application (Systemd + Gunicorn)
 
 ```ini
 [Unit]
@@ -138,6 +112,14 @@ sudo systemctl start report-hub
 
 Access the application in your web browser at: `http://<your-server-ip>:8090/`
 *Note: On your first login, you will be prompted to set up your Authenticator App (Google Authenticator / Authy) for Two-Factor Authentication.*
+
+### 3. Alternative Installation (Windows)
+If you prefer to test the application locally on Windows, an automated setup script is provided:
+```powershell
+git clone https://github.com/wweber993/ad-report-hub.git
+cd ad-report-hub
+.\install_hub.ps1
+```
 
 ---
 
