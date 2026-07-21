@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>📈 Comparativo de Vulnerabilidades</title>
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+    header { background: #1a2942; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .titulo-central { text-align: center; margin: 30px 0 10px; font-size: 24px; color: #1a2942; }
+    .seletor { text-align: center; margin-bottom: 30px; }
+    select, button { padding: 10px; font-size: 16px; border-radius: 6px; margin: 0 10px; border: 1px solid #ccc; min-width: 180px; }
+    .ts-wrapper { margin: 0 10px; max-width: 420px; display: inline-block; }
+    .grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; padding: 0 20px; }
+    .bloco { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1  ); width: 280px; }
+    .bloco h3 { margin: 0; padding: 10px; font-size: 18px; color: white; text-align: center; }
+    .critico { background: #c0392b; }
+    .alto { background: #e67e22; }
+    .comparativo { background: #2ecc71; }
+    .corrigido { background: #3498db; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: center; padding: 8px; border-bottom: 1px solid #eee; }
+    th { background: #ecf0f1; }
+    .positivo { color: #27ae60; font-weight: bold; }
+    .negativo { color: #e74c3c; font-weight: bold; }
+    .grafico-container {
+      width: 100%;
+      max-width: 90%;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .seletor-grafico {
+        text-align: right;
+        margin-bottom: 10px;
+        padding-right: 10px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        align-items: center;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="titulo-central">📈 Comparativo de Vulnerabilidades por Severidade e Faixa de Tempo</div>
+  <div class="seletor">
+    <select id="data1" placeholder="Data 1"></select>
+    <select id="data2" placeholder="Data 2"></select>
+    <select id="ambiente" placeholder="Ambiente"></select>
+    <button onclick="comparar()">Comparar</button>
+  </div>
+  <div id="grid-result" class="grid"></div>
+
+  <div class="grafico-container">
+    <div class="seletor-grafico">
+        <label for="periodoGrafico">Período do Gráfico:</label>
+        <!-- ================================================================== -->
+        <!-- OPÇÕES DO SELETOR ATUALIZADAS CONFORME SOLICITADO -->
+        <!-- ================================================================== -->
+        <select id="periodoGrafico">
+            <option value="7">Últimos 7 dias</option>
+            <option value="15">Últimos 15 dias</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="60">Últimos 60 dias</option>
+            <option value="0">Todo o período</option> <!-- Mantida para visão completa -->
+        </select>
+        <label for="faixaTempoGrafico">Filtrar por Faixa:</label>
+        <select id="faixaTempoGrafico">
+            <option value="">Todas as Faixas</option>
+            <option value="0 a 30 dias">0 a 30 dias</option>
+            <option value="31 a 60 dias">31 a 60 dias</option>
+            <option value="Acima de 60 dias">Acima de 60 dias</option>
+        </select>
+    </div>
+    <canvas id="timelineChart"></canvas>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+<script>
+Chart.register(ChartDataLabels );
+
+const faixas = ["0 a 30 dias", "31 a 60 dias", "Acima de 60 dias"];
+let timelineChart = null;
+let datasDisponiveisGlobal = [];
+
+const parseDate = (str) => {
+    const [dia, mes, ano] = str.split('-').map(Number);
+    return new Date(ano, mes - 1, dia);
+};
+
+async function carregarDatasDisponiveis() {
+  const response = await fetch('/vulns/data/comparativo/lista_datas');
+  datasDisponiveisGlobal = await response.json();
+  return datasDisponiveisGlobal;
+}
+
+async function carregarDadosJson(data) {
+  const response = await fetch(`/vulns/data/comparativo/${data}`);
+  return await response.json();
+}
+
+function calcularTotalSeveridade(dados, faixaFiltro = null) {
+    let total = 0;
+    if (dados) {
+        if (faixaFiltro) {
+            total += dados[faixaFiltro] || 0;
+        } else {
+            for (const faixa of faixas) {
+                total += dados[faixa] || 0;
+            }
+        }
+    }
+    return total;
+}
+
+async function criarGraficoTimeline() {
+    const ambienteFiltro = document.getElementById('ambiente').value;
+    const faixaTempoFiltro = document.getElementById('faixaTempoGrafico').value;
+    const periodoSelecionado = document.getElementById('periodoGrafico').value;
+
+    const labelsOrdenados = [...datasDisponiveisGlobal].sort((a, b) => parseDate(a) - parseDate(b));
+    let labelsFiltrados = labelsOrdenados;
+    let tituloPeriodo = "Todo o Período";
+
+    if (periodoSelecionado !== '0' && labelsOrdenados.length > 0) {
+        const diasAtras = parseInt(periodoSelecionado, 10);
+        const dataMaisRecente = labelsOrdenados[labelsOrdenados.length - 1];
+        const dataCorte = new Date(parseDate(dataMaisRecente));
+        dataCorte.setDate(dataCorte.getDate() - diasAtras);
+        
+        labelsFiltrados = labelsOrdenados.filter(label => parseDate(label) >= dataCorte);
+        tituloPeriodo = `Últimos ${diasAtras} dias`;
+    }
+
+    const promessas = labelsFiltrados.map(data => carregarDadosJson(data));
+    const dadosFiltrados = await Promise.all(promessas);
+
+    const dadosCriticos = [];
+    const dadosAltos = [];
+
+    dadosFiltrados.forEach(data => {
+        let totalCritico = 0;
+        let totalAlto = 0;
+        if (ambienteFiltro) {
+            const dadosAmbiente = data.dados?.[ambienteFiltro];
+            if (dadosAmbiente) {
+                totalCritico = calcularTotalSeveridade(dadosAmbiente["Crítica"], faixaTempoFiltro);
+                totalAlto = calcularTotalSeveridade(dadosAmbiente["Alta"], faixaTempoFiltro);
+            }
+        } else {
+            if (data.dados) {
+                for (const ambiente in data.dados) {
+                    totalCritico += calcularTotalSeveridade(data.dados[ambiente]["Crítica"], faixaTempoFiltro);
+                    totalAlto += calcularTotalSeveridade(data.dados[ambiente]["Alta"], faixaTempoFiltro);
+                }
+            }
+        }
+        dadosCriticos.push(totalCritico);
+        dadosAltos.push(totalAlto);
+    });
+
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    if (timelineChart) {
+        timelineChart.destroy();
+    }
+
+    let tituloGrafico = `Timeline de Vulnerabilidades (${tituloPeriodo}) ${ambienteFiltro ? '- ' + ambienteFiltro : '- Todos os Ambientes'}`;
+    if (faixaTempoFiltro) {
+        tituloGrafico += ` (${faixaTempoFiltro})`;
+    }
+
+    timelineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labelsFiltrados,
+            datasets: [{
+                label: 'Vulnerabilidades Críticas',
+                data: dadosCriticos,
+                borderColor: '#c0392b',
+                backgroundColor: 'rgba(192, 57, 43, 0.2)',
+                fill: true,
+                tension: 0.1
+            }, {
+                label: 'Vulnerabilidades Altas',
+                data: dadosAltos,
+                borderColor: '#e67e22',
+                backgroundColor: 'rgba(230, 126, 34, 0.2)',
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            aspectRatio: 2.5,
+            maintainAspectRatio: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: tituloGrafico,
+                    font: { size: 18 }
+                },
+                legend: { position: 'top' },
+                datalabels: {
+                    align: 'top', anchor: 'end', color: '#555',
+                    font: { weight: 'bold', size: 10 },
+                    formatter: (value) => value > 0 ? value : null,
+                    padding: { top: 4 }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Quantidade de Vulnerabilidades' } },
+                x: { title: { display: true, text: 'Data da Coleta' } }
+            }
+        }
+    });
+}
+
+async function inicializar() {
+  const datas = await carregarDatasDisponiveis();
+  const select1 = new TomSelect('#data1', { options: datas.map(d => ({value: d, text: d})), create: false });
+  const select2 = new TomSelect('#data2', { options: datas.map(d => ({value: d, text: d})), create: false });
+
+  if (datas.length >= 2) {
+    select1.setValue(datas[datas.length - 2]);
+    select2.setValue(datas[datas.length - 1]);
+  }
+
+  const data1 = datas.length > 1 ? datas[datas.length - 2] : (datas[0] || '');
+  const data2 = datas.length > 0 ? datas[datas.length - 1] : (datas[0] || '');
+  const [d1, d2] = await Promise.all([carregarDadosJson(data1), carregarDadosJson(data2)]);
+
+  const ambientesSet = new Set();
+  Object.keys(d1.dados || {}).forEach(a => ambientesSet.add(a));
+  Object.keys(d2.dados || {}).forEach(a => ambientesSet.add(a));
+
+  new TomSelect('#ambiente', {
+    options: [{value: '', text: 'Todos'}].concat(Array.from(ambientesSet).sort().map(a => ({value: a, text: a}))),
+    create: false
+  });
+
+  document.getElementById('faixaTempoGrafico').addEventListener('change', criarGraficoTimeline);
+  document.getElementById('periodoGrafico').addEventListener('change', criarGraficoTimeline);
+
+  comparar();
+}
+
+async function comparar() {
+  const d1_val = document.getElementById('data1').value;
+  const d2_val = document.getElementById('data2').value;
+  const ambienteFiltro = document.getElementById('ambiente').value;
+
+  if (!d1_val || !d2_val) {
+      document.getElementById('grid-result').innerHTML = "<p style='text-align: center;'>Por favor, selecione duas datas para comparar.</p>";
+      return;
+  }
+
+  const [data1, data2] = await Promise.all([
+      carregarDadosJson(d1_val),
+      carregarDadosJson(d2_val)
+  ]);
+
+  const d1Data = data1.dados || {};
+  const d2Data = data2.dados || {};
+  const ambientes = Object.keys({...d1Data, ...d2Data});
+
+  const somarTotais = (dadosPorData) => {
+    const totais = {"Crítica": {}, "Alta": {}};
+    for (const ambiente of ambientes) {
+      for (const sev of ["Crítica", "Alta"]) {
+        for (const faixa of faixas) {
+          const val = dadosPorData[ambiente]?.[sev]?.[faixa] ?? 0;
+          totais[sev][faixa] = (totais[sev][faixa] || 0) + val;
+        }
+      }
+    }
+    return totais;
+  };
+
+  const buildTabela = (data, titulo, classe) => {
+    let html = `<div class='bloco'><h3 class='${classe}'>${titulo}</h3><table>`;
+    html += `<tr><th>Período</th><th>Qtd</th></tr>`;
+    faixas.forEach(f => { html += `<tr><td>${f}</td><td>${data[f] ?? 0}</td></tr>`; });
+    html += `</table></div>`;
+    return html;
+  };
+
+  const gerarResumo = (severidade, cor, d1s, d2s) => {
+    const comp = {};
+    faixas.forEach(f => { comp[f] = (d2s[f] ?? 0) - (d1s[f] ?? 0); });
+    const buildComparativo = () => {
+      let html = `<div class='bloco'><h3 class='comparativo'>Δ ${severidade}</h3><table>`;
+      html += `<tr><th>Período</th><th>Diferença</th></tr>`;
+      faixas.forEach(f => {
+        const val = comp[f];
+        const classe = val > 0 ? 'negativo' : (val < 0 ? 'positivo' : '');
+        const simbolo = val > 0 ? '+ ' : (val < 0 ? '− ' : '');
+        html += `<tr><td>${f}</td><td class="${classe}">${simbolo}${Math.abs(val)}</td></tr>`;
+      });
+      html += `</table></div>`;
+      return html;
+    };
+    return [
+      buildTabela(d1s, `${severidade} - ${d1_val}`, cor),
+      buildTabela(d2s, `${severidade} - ${d2_val}`, cor),
+      buildComparativo()
+    ].join('');
+  };
+
+  let html = '';
+  if (ambienteFiltro) {
+    const d1s = d1Data[ambienteFiltro] || {};
+    const d2s = d2Data[ambienteFiltro] || {};
+    html += gerarResumo("Crítica", 'critico', d1s["Crítica"] || {}, d2s["Crítica"] || {});
+    html += gerarResumo("Alta", 'alto', d1s["Alta"] || {}, d2s["Alta"] || {});
+  } else {
+    const totaisD1 = somarTotais(d1Data);
+    const totaisD2 = somarTotais(d2Data);
+    html += gerarResumo("Crítica", 'critico', totaisD1["Crítica"], totaisD2["Crítica"]);
+    html += gerarResumo("Alta", 'alto', totaisD1["Alta"], totaisD2["Alta"]);
+  }
+
+  document.getElementById('grid-result').innerHTML = html;
+  criarGraficoTimeline();
+}
+
+document.addEventListener('DOMContentLoaded', inicializar);
+</script>
+</body>
+</html>

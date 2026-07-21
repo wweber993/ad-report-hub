@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificação MFA — CyberHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cyberhub.css') }}">
+</head>
+<body class="auth-page">
+
+  <div class="glass-card auth-card fade-up" style="text-align:center;">
+
+    <!-- Icon -->
+    <div class="auth-logo">
+      <div class="auth-logo-icon"
+           style="background:rgba(56,189,248,0.12); box-shadow:0 0 24px rgba(56,189,248,0.2);">
+        <i class="bi bi-shield-lock-fill"></i>
+      </div>
+      <div class="auth-title">Verificação em 2 Etapas</div>
+      <div class="auth-subtitle">
+        Abra seu aplicativo <strong>Autenticador</strong> (Google Authenticator, Authy, etc) para gerar o código.
+      </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert-hub {{ category }}" style="margin-bottom:16px;text-align:left;">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('auth.mfa') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input class="mfa-input" type="text" name="code"
+             maxlength="6" placeholder="000000"
+             autocomplete="one-time-code" autofocus required>
+      <button type="submit" class="btn-login" style="margin-top:4px;">
+        <i class="bi bi-check2-circle" style="margin-right:6px;"></i>
+        Verificar Código
+      </button>
+    </form>
+
+    <div style="margin-top:24px; font-size:0.82rem; color:var(--text-muted);">
+      <a href="{{ url_for('auth.login') }}"
+         style="color:var(--text-muted); text-decoration:none;"
+         onmouseover="this.style.color='var(--accent)'"
+         onmouseout="this.style.color='var(--text-muted)'">
+        <i class="bi bi-arrow-left" style="margin-right:4px;"></i>
+        Voltar ao login
+      </a>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/report-action1.css') }}">
+{% endblock %}
+
+{% block title %}Action1 — Organizations{% endblock %}
+
+{% block breadcrumb %}
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span>Report Action1</span>
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span class="bc-current">Organizations</span>
+{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+
+<div class="page-header">
+  <div class="page-title">
+    <div class="page-title-icon" style="background:rgba(56,189,248,0.1);color:#38bdf8;">
+      <i class="bi bi-building"></i>
+    </div>
+    Organizações
+  </div>
+  {% if api_healthy %}
+    <span class="badge-hub badge-success"><i class="bi bi-circle-fill"></i> API Online</span>
+  {% else %}
+    <span class="badge-hub badge-danger"><i class="bi bi-circle-fill"></i> API Offline</span>
+  {% endif %}
+</div>
+
+<div class="kpi-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); margin-bottom: 24px;">
+  <div class="kpi-card accent">
+    <div class="kpi-label"><i class="bi bi-building"></i> Organizações</div>
+    <div class="kpi-value">{{ organizations | length }}</div>
+    <div class="kpi-sub">total monitoradas</div>
+  </div>
+  <div class="kpi-card purple">
+    <div class="kpi-label"><i class="bi bi-laptop"></i> Total Endpoints</div>
+    <div class="kpi-value">{{ organizations | sum(attribute='total') }}</div>
+    <div class="kpi-sub">em todas as orgs</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-label"><i class="bi bi-circle-fill"></i> Online</div>
+    <div class="kpi-value">{{ organizations | sum(attribute='online') }}</div>
+    <div class="kpi-sub">total online</div>
+  </div>
+  <div class="kpi-card red">
+    <div class="kpi-label"><i class="bi bi-circle-fill"></i> Offline</div>
+    <div class="kpi-value">{{ organizations | sum(attribute='offline') }}</div>
+    <div class="kpi-sub">total offline</div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card-header">
+    <div class="table-card-title">
+      <i class="bi bi-building" style="color:var(--accent)"></i>
+      Todas as Organizações
+    </div>
+    <span class="text-muted text-sm">{{ organizations | length }} organização(ões)</span>
+  </div>
+  <div class="table-card-body">
+    {% if organizations %}
+    <table id="table-orgs" class="cyberhub-table" style="width:100%">
+      <thead>
+        <tr>
+          <th>Organização</th>
+          <th>Total Endpoints</th>
+          <th>Online</th>
+          <th>Offline</th>
+          <th>% Online</th>
+          <th>Descrição</th>
+          <th>Criada em</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for org in organizations %}
+        {% set pct = (org.online / org.total * 100) | round(0) | int if org.total > 0 else 0 %}
+        <tr>
+          <td>
+            <div class="fw-600">{{ org.name }}</div>
+            <div class="text-muted text-xs mono">{{ org.id[:16] if org.id|length > 16 else org.id }}…</div>
+          </td>
+          <td class="fw-600" style="color:var(--accent)">{{ org.total }}</td>
+          <td><span class="badge-online">{{ org.online }}</span></td>
+          <td>
+            {% if org.offline > 0 %}
+              <span class="badge-failed">{{ org.offline }}</span>
+            {% else %}
+              <span class="text-muted">0</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px">
+              <div class="progress-cyber" style="width:80px">
+                <div class="progress-bar" style="width:{{ pct }}%"></div>
+              </div>
+              <span class="text-sm {% if pct >= 90 %}text-green{% elif pct >= 70 %}text-yellow{% else %}text-red{% endif %}">
+                {{ pct }}%
+              </span>
+            </div>
+          </td>
+          <td class="text-muted text-sm">{{ org.description or '—' }}</td>
+          <td class="text-muted text-sm no-wrap">{{ org.created_at | format_datetime }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🏢</div>
+      <p>Nenhuma organização encontrada.<br>Verifique as credenciais da API.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/report-action1.js') }}"></script>
+<script>
+  initDataTable('table-orgs', { order: [[1, 'desc']], columnDefs: [{ orderable: false, targets: [4] }] });
+</script>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Início{% endblock %}
+
+{% block breadcrumb %}
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span class="bc-current">Início</span>
+{% endblock %}
+
+{% block content %}
+
+<div class="fade-up">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-title">
+      <div class="page-title-icon">
+        <i class="bi bi-shield-shaded"></i>
+      </div>
+      CyberHub
+    </div>
+    <span class="badge-hub badge-info" style="font-size:0.78rem; padding:5px 14px;">
+      <i class="bi bi-circle-fill" style="font-size:7px; animation:pulse 2s infinite;"></i>
+      &nbsp;Plataforma Online
+    </span>
+  </div>
+
+  <p style="color:var(--text-muted); margin-bottom:28px; font-size:0.9rem;">
+    Bem-vindo, <strong style="color:var(--text-secondary);">{{ current_user.username }}</strong>.
+    Selecione um módulo abaixo para começar.
+  </p>
+
+  <!-- Module cards -->
+  <div class="module-cards-grid">
+
+    <!-- Report AD -->
+    <a href="{{ url_for('ad.dashboard') }}" class="module-card"
+       style="--mc-color: #38bdf8;">
+      <div class="module-card-icon"
+           style="background:rgba(56,189,248,0.1); color:#38bdf8;">
+        <i class="bi bi-person-badge-fill"></i>
+      </div>
+      <div class="module-card-title">Report AD</div>
+      <div class="module-card-desc">
+        Monitoramento de usuários do Active Directory. Conformidade, riscos, saúde
+        e análise de contas por departamento.
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:6px;
+                  font-size:0.78rem; color:var(--text-muted);">
+        <i class="bi bi-arrow-right-circle" style="color:#38bdf8;"></i>
+        Abrir módulo
+      </div>
+    </a>
+
+    <!-- Report Firewall -->
+    <a href="{{ url_for('firewall.dashboard') }}" class="module-card"
+       style="--mc-color: #f43f5e;">
+      <div class="module-card-icon"
+           style="background:rgba(244,63,94,0.1); color:#f43f5e;">
+        <i class="bi bi-shield-exclamation"></i>
+      </div>
+      <div class="module-card-title">Report Firewall</div>
+      <div class="module-card-desc">
+        Security Fabric Rating do FortiGate. Postura de segurança, VPN IPsec,
+        cobertura IPS e insights de compliance.
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:6px;
+                  font-size:0.78rem; color:var(--text-muted);">
+        <i class="bi bi-arrow-right-circle" style="color:#f43f5e;"></i>
+        Abrir módulo
+      </div>
+    </a>
+
+    <!-- Report Action1 -->
+    <a href="{{ url_for('action1.dashboard') }}" class="module-card"
+       style="--mc-color: #818cf8;">
+      <div class="module-card-icon"
+           style="background:rgba(129,140,248,0.1); color:#818cf8;">
+        <i class="bi bi-lightning-charge-fill"></i>
+      </div>
+      <div class="module-card-title">Report Action1</div>
+      <div class="module-card-desc">
+        Inventário e automação via Action1. Organizations, endpoints, scripts e
+        status de automações em tempo real.
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:6px;
+                  font-size:0.78rem; color:var(--text-muted);">
+        <i class="bi bi-arrow-right-circle" style="color:#818cf8;"></i>
+        Abrir módulo
+      </div>
+    </a>
+
+    <!-- SOC Clavis -->
+    <a href="{{ url_for('soc.dashboard') }}" class="module-card"
+       style="--mc-color: #f59e0b;">
+      <div class="module-card-icon"
+           style="background:rgba(245,158,11,0.1); color:#f59e0b;">
+        <i class="bi bi-ticket-perforated-fill"></i>
+      </div>
+      <div class="module-card-title">SOC Clavis</div>
+      <div class="module-card-desc">
+        Tickets de segurança do SOC Clavis via Jira. Visualize, filtre e adicione
+        comentários diretamente pelo CyberHub.
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:6px;
+                  font-size:0.78rem; color:var(--text-muted);">
+        <i class="bi bi-arrow-right-circle" style="color:#f59e0b;"></i>
+        Abrir módulo
+      </div>
+    </a>
+
+    <!-- SentinelOne -->
+    <a href="{{ url_for('s1.dashboard') }}" class="module-card"
+       style="--mc-color: #7928ca;">
+      <div class="module-card-icon"
+           style="background:rgba(121,40,202,0.1); color:#7928ca;">
+        <i class="bi bi-shield-shaded"></i>
+      </div>
+      <div class="module-card-title">SentinelOne</div>
+      <div class="module-card-desc">
+        Proteção de endpoints e EDR. Veja o sumário global de ativos, ameaças
+        detectadas e sites monitorados em tempo real.
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:6px;
+                  font-size:0.78rem; color:var(--text-muted);">
+        <i class="bi bi-arrow-right-circle" style="color:#7928ca;"></i>
+        Ver endpoints
+      </div>
+    </a>
+
+    <!-- Report Vulns -->
+    <a href="{{ url_for('report_vulns.index') }}" class="module-card"
+       style="--mc-color: #10b981;">
+      <div class="module-card-icon"
+           style="background:rgba(16,185,129,0.1); color:#10b981;">
+        <i class="bi bi-bug-fill"></i>
+      </div>
+      <div class="module-card-title">Report Vulns</div>
+      <div class="module-card-desc">
+        Gestão de vulnerabilidades. Relatórios diários, ativos, correções,
+        compliance, produtos e Java desatualizado.
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:6px;
+                  font-size:0.78rem; color:var(--text-muted);">
+        <i class="bi bi-arrow-right-circle" style="color:#10b981;"></i>
+        Abrir módulo
+      </div>
+    </a>
+
+    {% if current_user.is_admin %}
+    <!-- Administration -->
+    <a href="{{ url_for('admin.users') }}" class="module-card"
+       style="--mc-color: #fbbf24;">
+      <div class="module-card-icon"
+           style="background:rgba(251,191,36,0.1); color:#fbbf24;">
+        <i class="bi bi-gear-fill"></i>
+      </div>
+      <div class="module-card-title">Administração</div>
+      <div class="module-card-desc">
+        Gestão centralizada de usuários: criar contas, redefinir senhas,
+        controlar permissões e desbloquear acessos.
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:6px;
+                  font-size:0.78rem; color:var(--text-muted);">
+        <i class="bi bi-arrow-right-circle" style="color:#fbbf24;"></i>
+        Gerenciar usuários
+      </div>
+    </a>
+    {% endif %}
+
+  </div>
+
+</div>
+
+<style>
+  @keyframes pulse {
+    0%,100% { opacity:1; }
+    50% { opacity:0.3; }
+  }
+</style>
+{% endblock %}

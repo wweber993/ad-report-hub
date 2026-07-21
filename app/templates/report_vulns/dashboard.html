@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Dashboard de Vulnerabilidades{% endblock %}
+
+{% block extra_css %}
+  <style>
+    .grafico {
+      flex: 1 1 450px;
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      min-width: 300px;
+      max-width: 600px;
+    }
+    canvas {
+      width: 100% !important;
+      max-height: 280px !important;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <h1>Dashboard Interativo de Vulnerabilidades</h1>
+      <div class="data-geracao">Gerado dinamicamente com base no JSON</div>
+      <div id="filtro">
+        <label for="ambiente">Selecionar Ambiente:</label>
+        <select id="ambiente" onchange="atualizarGraficos()"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="grafico"><canvas id="chartFaixa"></canvas></div>
+    </div>
+    <div class="col-lg-6">
+      <div class="grafico"><canvas id="chartSeveridade"></canvas></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="grafico"><canvas id="chartTop10"></canvas></div>
+    </div>
+    <div class="col-lg-6">
+      <div class="grafico"><canvas id="chartTopDias"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let dados = {};
+  let charts = {};
+
+  document.addEventListener("DOMContentLoaded", function() {
+    fetch("{{ url_for('report_vulns.dashboard_data') }}")
+      .then(response => response.json())
+      .then(data => {
+        dados = data;
+        const ambienteSelect = document.getElementById('ambiente');
+        Object.keys(dados).forEach(amb => {
+          const opt = document.createElement('option');
+          opt.value = amb;
+          opt.textContent = amb;
+          ambienteSelect.appendChild(opt);
+        });
+        ambienteSelect.value = "Todos";
+        atualizarGraficos();
+      });
+  });
+
+  function atualizarGraficos() {
+    // ... (rest of the script)
+  }
+</script>
+{% endblock %}
+
+      atualizarGraficos();
+    });
+
+  function atualizarGraficos() {
+    const ambiente = document.getElementById('ambiente').value;
+    const info = dados[ambiente] || {};
+
+    const faixa = info.faixa || {};
+    const severidade = info.severidade || {};
+    const top10 = info.top10 || {};
+    const top_dias = info.top_dias || {};
+
+    renderChart('chartFaixa', 'pie', {
+      labels: Object.keys(faixa),
+      datasets: [{
+        label: "Distribuição por Faixa de Dias",
+        data: Object.values(faixa),
+        backgroundColor: ["#2ecc71", "#f39c12", "#e74c3c"]
+      }]
+    });
+
+    renderChart('chartSeveridade', 'bar', {
+      labels: ["Alta", "Crítica"],
+      datasets: [{
+        label: "Vulnerabilidades",
+        data: [severidade['Alta'] || 0, severidade['Crítica'] || 0],
+        backgroundColor: ["#f1c40f", "#e74c3c"]
+      }]
+    });
+
+    renderChart('chartTop10', 'bar', {
+      labels: Object.keys(top10),
+      datasets: [{
+        label: "Top 10 Vulnerabilidades (Qtd)",
+        data: Object.values(top10),
+        backgroundColor: "#8e44ad"
+      }]
+    }, { indexAxis: 'y' });
+
+    renderChart('chartTopDias', 'bar', {
+      labels: Object.keys(top_dias),
+      datasets: [{
+        label: "Top 10 Vulnerabilidades por Dias Ativos",
+        data: Object.values(top_dias),
+        backgroundColor: "#2980b9"
+      }]
+    }, { indexAxis: 'y' });
+  }
+
+  function renderChart(id, type, data, options = {}) {
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(document.getElementById(id), {
+      type: type,
+      data: data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' }
+        },
+        ...options
+      }
+    });
+  }
+</script>
+</body>
+</html>

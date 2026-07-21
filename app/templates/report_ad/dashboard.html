@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Report AD — Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/report-ad.css') }}">
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
+{% block breadcrumb %}
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span>Report AD</span>
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span class="bc-current">Dashboard</span>
+{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex align-items-center gap-2">
+  <select class="form-select form-select-sm" id="envFilter" style="background:#0d111d;color:#f8fafc;border:1px solid rgba(255,255,255,0.1);border-radius:10px;min-width:160px;">
+    <option value="">Todos Ambientes</option>
+  </select>
+  <div class="ad-search-box">
+    <i class="bi bi-search"></i>
+    <input type="text" id="userSearch" placeholder="Buscar usuários...">
+  </div>
+  <button id="refreshBtn" class="btn-cyber btn-sm" title="Atualizar"><i class="bi bi-arrow-clockwise"></i></button>
+  <button id="exportBtn" class="btn-cyber btn-sm"><i class="bi bi-download me-1"></i>Exportar</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+
+  <div class="stats-grid stats-grid-4col" id="summaryCards"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:16px;">
+    <div>
+      <div class="glass-card p-4 h-100">
+        <h5 class="mb-4 text-center" style="color:#f8fafc;font-size:.95rem;text-transform:uppercase;letter-spacing:1px;">Score de Saúde AD</h5>
+        <div class="health-score-container">
+          <div class="health-score-circle" id="healthCircle" style="--health-percent: 0%">
+            <div class="health-score-value" id="healthValue">0%</div>
+          </div>
+          <div class="text-center mt-3">
+            <p class="text-secondary mb-0" style="font-size:.85rem;">Nível de Segurança Geral</p>
+            <small id="healthStatus" class="text-info fw-bold">Ambiente Saudável</small>
+            <div class="mt-4 text-start border-top border-secondary border-opacity-10 pt-3">
+              <span class="text-secondary small d-block mb-2">Motivos da Pontuação:</span>
+              <ul id="healthInsightsList" class="list-unstyled small mb-0 text-secondary"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="glass-card p-4 h-100">
+        <h5 class="mb-4" style="color:#f8fafc;font-size:.95rem;text-transform:uppercase;letter-spacing:1px;">Riscos por Departamento</h5>
+        <div id="deptChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:16px;">
+    <div class="glass-card overflow-hidden">
+      <div class="p-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 border-bottom border-secondary border-opacity-10">
+        <div class="d-flex align-items-center gap-3">
+          <h5 class="mb-0" style="color:#f8fafc;font-size:.9rem;text-transform:uppercase;letter-spacing:1px;">Diretório Global de Usuários</h5>
+          <div class="ad-search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="tableSearch" placeholder="Filtrar nome, email ou depto...">
+          </div>
+        </div>
+        <div class="filter-group d-flex gap-2 flex-wrap justify-content-end">
+          <button class="btn btn-sm btn-outline-secondary px-3" onclick="setFilter('all')" id="filterAll">Todos</button>
+          <button class="btn btn-sm btn-outline-success px-3" onclick="setFilter('compliant')" id="filterCompliant">Conformes</button>
+          <button class="btn btn-sm btn-outline-danger px-3" onclick="setFilter('nonCompliant')" id="filterNonCompliant">Não Conformes</button>
+          <button class="btn btn-sm btn-outline-warning px-3" onclick="setFilter('lockedOut')" id="filterLockedOut">Bloqueados</button>
+          <button class="btn btn-sm btn-outline-info px-3" onclick="setFilter('neverExpires')" id="filterNeverExpires">Senha Nunca Expira</button>
+          <button class="btn btn-sm btn-outline-secondary px-3" onclick="setFilter('disabled')" id="filterDisabled">Desativadas</button>
+          <button class="btn btn-sm btn-outline-secondary px-3" onclick="setFilter('inactive90')" id="filterInactive90">Sem Logon (90d+)</button>
+        </div>
+      </div>
+      <div class="table-responsive" style="max-height:600px;">
+        <table class="custom-table" id="usersTable">
+          <thead>
+            <tr>
+              <th onclick="toggleSort('name')" style="cursor:pointer;">Usuário</th>
+              <th onclick="toggleSort('email')" style="cursor:pointer;">Email</th>
+              <th onclick="toggleSort('department')" style="cursor:pointer;">Departamento</th>
+              <th onclick="toggleSort('environment')" style="cursor:pointer;">Ambiente</th>
+              <th onclick="toggleSort('lastLogon')" style="cursor:pointer;">Último Logon</th>
+              <th onclick="toggleSort('status')" style="cursor:pointer;">Status</th>
+              <th onclick="toggleSort('risk')" style="cursor:pointer;">Risco</th>
+            </tr>
+          </thead>
+          <tbody id="userListBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- USER DETAILS MODAL -->
+<div id="userDetailsModal" class="modal-overlay">
+  <div class="details-modal glass-card">
+    <div class="modal-header" style="padding:28px 32px;border-bottom:1px solid rgba(255,255,255,0.07);">
+      <div class="d-flex align-items-center gap-3">
+        <div id="modalUserIcon" class="stat-icon mb-0" style="width:50px;height:50px;border-radius:14px;">
+          <i class="bi bi-person-fill"></i>
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <h4 class="mb-0" id="modalUserName" style="color:#f8fafc;"></h4>
+            <span id="modalHeaderStatus" class="badge"></span>
+          </div>
+          <p class="text-secondary mb-0" id="modalUserEmail" style="font-size:.85rem;"></p>
+        </div>
+      </div>
+      <button class="btn-close btn-close-white" id="closeDetailsBtn"></button>
+    </div>
+    <div class="modal-body p-0">
+      <div class="row g-0">
+        <div class="col-md-8 border-end border-secondary border-opacity-10">
+          <div class="p-4">
+            <div class="row g-4 mb-5">
+              <div class="col-sm-6">
+                <h6 class="section-title">Informações de Identidade</h6>
+                <div class="detail-grid">
+                  <div class="detail-item"><span class="detail-label">Username</span><span class="detail-value fw-bold" id="detailUsername">-</span></div>
+                  <div class="detail-item"><span class="detail-label">Cargo</span><span class="detail-value" id="detailTitle">-</span></div>
+                  <div class="detail-item"><span class="detail-label">Departamento</span><span class="detail-value" id="detailDept">-</span></div>
+                  <div class="detail-item"><span class="detail-label">Ambiente</span><span class="detail-value" id="detailEnvironment">-</span></div>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <h6 class="section-title">Ciclo de Vida</h6>
+                <div class="detail-grid">
+                  <div class="detail-item"><span class="detail-label">Criado em</span><span class="detail-value" id="detailCreated">-</span></div>
+                  <div class="detail-item"><span class="detail-label">Última Alteração</span><span class="detail-value" id="detailModified">-</span></div>
+                  <div class="detail-item"><span class="detail-label">Último Logon</span><span class="detail-value" id="detailLastLogon">-</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="mb-5">
+              <h6 class="section-title">Segurança da Conta</h6>
+              <div class="row g-3">
+                <div class="col-sm-4"><div class="glass-card p-3 text-center" style="background:rgba(255,255,255,.02)"><div class="text-secondary small mb-1">Idade da Senha</div><div class="h5 mb-0 fw-bold" id="detailPwdAge">- dias</div></div></div>
+                <div class="col-sm-4"><div class="glass-card p-3 text-center" style="background:rgba(255,255,255,.02)"><div class="text-secondary small mb-1">Senha Expira</div><div class="h5 mb-0 fw-bold" id="detailPwdExpires">Sim</div></div></div>
+                <div class="col-sm-4"><div class="glass-card p-3 text-center" style="background:rgba(255,255,255,.02)"><div class="text-secondary small mb-1">Bad Logons</div><div class="h5 mb-0 fw-bold text-danger" id="detailBadLogon">0</div></div></div>
+              </div>
+            </div>
+            <div class="mb-4">
+              <h6 class="section-title">Grupos (Privilegiados destacados)</h6>
+              <div id="modalUserGroups" class="d-flex flex-wrap gap-1"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4">
+            <h6 class="section-title">Análise de Risco</h6>
+            <div class="glass-card p-4 mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-secondary small">Probabilidade de Risco</span>
+                <span id="modalRiskBadge" class="risk-badge">Low</span>
+              </div>
+              <div class="progress mb-3" style="height:10px;background:rgba(255,255,255,.05);border-radius:5px;">
+                <div id="modalRiskProgress" class="progress-bar" style="width:0%"></div>
+              </div>
+              <div class="mt-4">
+                <span class="text-secondary small d-block mb-2">Fatores de Risco:</span>
+                <ul id="modalRiskFactors" class="list-unstyled small mb-0"></ul>
+              </div>
+            </div>
+            <h6 class="section-title">Status e OU</h6>
+            <div class="glass-card p-3 mb-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <span class="text-secondary small">Status no AD</span>
+                <div id="modalAccountStatus" class="badge">Ativo</div>
+              </div>
+              <div class="border-top border-secondary border-opacity-10 pt-3">
+                <span class="text-secondary small d-block mb-1">Distinguished Name (OU)</span>
+                <div id="detailOU" class="text-secondary" style="font-size:.7rem;line-height:1.4;word-break:break-all;">-</div>
+              </div>
+            </div>
+            <h6 class="section-title">Conformidade</h6>
+            <div id="exceptionSection" class="p-3 rounded-3" style="background:rgba(56,189,248,.05);border:1px dashed rgba(56,189,248,.2);">
+              <div class="d-flex flex-column gap-3">
+                <div id="exceptionStatusText" class="text-secondary small">Este usuário segue as regras globais de segurança.</div>
+                <div id="exceptionActions" class="d-grid">
+                  <button id="approveExceptionBtn" class="btn btn-sm btn-info" onclick="toggleExceptionForm()">Aprovar Exceção</button>
+                  <button id="removeExceptionBtn" class="btn btn-sm btn-danger" style="display:none;" onclick="removeException()">Remover Exceção</button>
+                </div>
+              </div>
+              <div id="exceptionForm" class="mt-3" style="display:none;">
+                <textarea id="exceptionReason" class="form-control form-control-sm bg-dark text-white border-secondary mb-2" rows="3" placeholder="Justificativa da exceção..."></textarea>
+                <div class="d-flex justify-content-end gap-2">
+                  <button class="btn btn-sm btn-link text-secondary" onclick="toggleExceptionForm()">Cancelar</button>
+                  <button class="btn btn-sm btn-info" onclick="saveException()">Salvar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+<script src="{{ url_for('static', filename='js/report-ad.js') }}"></script>
+{% endblock %}

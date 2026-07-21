@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Report Firewall — Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/report-firewall.css') }}">
+{% endblock %}
+
+{% block breadcrumb %}
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span>Report Firewall</span>
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span class="bc-current">Dashboard</span>
+{% endblock %}
+
+{% block topbar_actions %}
+<div style="display:flex;align-items:center;gap:10px;">
+  <label for="envSelector" style="font-size:.85rem;font-weight:600;color:#94a3b8;">Ambiente:</label>
+  <select id="envSelector" onchange="changeEnvironment()" style="background:#0d111d;color:#f8fafc;border:1px solid #334155;border-radius:8px;padding:6px 12px;font-size:.85rem;">
+    <option value="">Carregando...</option>
+  </select>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="padding-bottom:40px;">
+
+  <!-- Top stats row -->
+  <div class="stats-grid">
+
+    <!-- Security Rating -->
+    <div class="fgt-card" style="position:relative;">
+      <div class="fgt-card-header">
+        <i class="bi bi-award" style="color:var(--fgt-blue);"></i> Security Rating
+        <div class="rating-help-icon" id="ratingHelpTrigger" title="Ver breakdown da nota"><i class="bi bi-info-circle"></i></div>
+      </div>
+      <div class="fgt-card-body health-container" style="min-height:220px;position:relative;">
+        <div id="scoreGauge"></div>
+        <div style="position:absolute;bottom:20px;font-weight:600;color:#94a3b8;font-size:1.1rem;">
+          Grade: <strong id="ratingGrade" style="color:#f8fafc;">--</strong>
+        </div>
+      </div>
+      <div id="ratingTooltipWrapper" class="rating-tooltip-wrapper">
+        <div id="ratingTooltip" class="rating-tooltip"><div style="color:#94a3b8;font-size:.8rem;">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- Execution Summary -->
+    <div class="fgt-card">
+      <div class="fgt-card-header"><i class="bi bi-activity" style="color:var(--fgt-blue);"></i> Execution Summary</div>
+      <div class="fgt-card-body">
+        <div class="stat-item"><span style="color:var(--fgt-green);font-weight:600;"><i class="bi bi-check-circle"></i> Secure Policies</span><span class="stat-value" id="passCount" style="color:var(--fgt-green);">0</span></div>
+        <div class="stat-item"><span style="color:var(--fgt-red);font-weight:600;"><i class="bi bi-x-circle"></i> Critical / High Risk</span><span class="stat-value" id="failCount" style="color:var(--fgt-red);">0</span></div>
+        <div class="stat-item"><span style="color:#f59e0b;font-weight:600;"><i class="bi bi-exclamation-triangle"></i> Warnings</span><span class="stat-value" id="warnCount" style="color:#f59e0b;">0</span></div>
+      </div>
+    </div>
+
+    <!-- Visibility & Logging -->
+    <div class="fgt-card">
+      <div class="fgt-card-header"><i class="bi bi-eye" style="color:var(--fgt-blue);"></i> Visibility &amp; Logging</div>
+      <div class="fgt-card-body">
+        <div class="stat-item"><span>Total Active Policies</span><span class="stat-value" id="totalActive">0</span></div>
+        <div class="stat-item"><span>Policies without Log</span><span class="stat-value" id="noLog" style="color:var(--fgt-red);">0</span></div>
+        <div class="stat-item"><span>IPS Coverage <span class="mini-badge-info" title="% de regras ativas com IPS">?</span></span><span class="stat-value" id="ipsCov">0</span></div>
+      </div>
+    </div>
+
+    <!-- VPN IPsec -->
+    <div class="fgt-card">
+      <div class="fgt-card-header"><i class="bi bi-shield-lock" style="color:var(--fgt-blue);"></i> VPN IPsec Status</div>
+      <div class="fgt-card-body">
+        <div class="stat-item"><span>Total Tunnels</span><span class="stat-value" id="vpnTotal">0</span></div>
+        <div class="stat-item" id="vpnUpContainer" style="cursor:pointer;" onclick="showVpnModal('up')">
+          <span style="color:var(--fgt-green);font-weight:600;"><i class="bi bi-check-circle"></i> UP</span>
+          <span class="stat-value" id="vpnUp" style="color:var(--fgt-green);">0</span>
+        </div>
+        <div class="stat-item" id="vpnDownContainer" style="cursor:pointer;" onclick="showVpnModal('down')">
+          <span style="color:var(--fgt-red);font-weight:600;"><i class="bi bi-x-circle"></i> DOWN</span>
+          <span class="stat-value" id="vpnDown" style="color:var(--fgt-red);">0</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /stats-grid -->
+
+  <!-- Charts Row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:0 0 20px;">
+
+    <!-- Left column: Vuln distribution + Policy Health KPIs -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="fgt-card">
+        <div class="fgt-card-header">Vulnerability Distribution</div>
+        <div class="fgt-card-body" id="vulnChart" style="padding:10px 20px;"></div>
+      </div>
+      <div class="fgt-card">
+        <div class="fgt-card-header">
+          <i class="bi bi-activity" style="color:var(--fgt-blue);"></i> Policy Health
+          <span style="font-size:.7rem;color:#64748b;font-weight:400;margin-left:6px;">(clique para detalhar)</span>
+        </div>
+        <div class="fgt-card-body" style="padding:16px 20px;">
+          <div class="kpi-grid">
+            <div class="kpi-card kpi-critical" onclick="setFilter('any_any')" title="Any-to-Any">
+              <div class="kpi-icon"><i class="bi bi-exclamation-octagon" style="font-size:1.2rem;"></i></div>
+              <div class="kpi-value" id="kpiAnyAny">0</div>
+              <div class="kpi-label">Any-to-Any</div>
+            </div>
+            <div class="kpi-card kpi-high" onclick="setFilter('no_ips')" title="Sem IPS">
+              <div class="kpi-icon"><i class="bi bi-shield-x" style="font-size:1.2rem;"></i></div>
+              <div class="kpi-value" id="kpiNoIps">0</div>
+              <div class="kpi-label">Sem IPS</div>
+            </div>
+            <div class="kpi-card kpi-warning" onclick="setFilter('inactive')" title="Sem Tráfego">
+              <div class="kpi-icon"><i class="bi bi-clock-history" style="font-size:1.2rem;"></i></div>
+              <div class="kpi-value" id="kpiNoTraffic">0</div>
+              <div class="kpi-label">Sem Tráfego</div>
+            </div>
+            <div class="kpi-card kpi-muted" onclick="setFilter('disabled')" title="Desativadas">
+              <div class="kpi-icon"><i class="bi bi-toggle-off" style="font-size:1.2rem;"></i></div>
+              <div class="kpi-value" id="kpiDisabled">0</div>
+              <div class="kpi-label">Desativadas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Risk by type + Insights -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="fgt-card">
+        <div class="fgt-card-header">
+          Compliance Risk by Type
+          <span style="font-size:.7rem;color:#64748b;font-weight:400;margin-left:6px;">(clique para filtrar)</span>
+        </div>
+        <div class="fgt-card-body" id="typeChart"></div>
+      </div>
+      <div class="fgt-card" style="flex:1;">
+        <div class="fgt-card-header" style="justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <i class="bi bi-lightbulb" style="color:var(--fgt-blue);"></i> Security Insights
+            <div id="aiBadge" style="display:none;font-size:.75rem;background:rgba(14,165,233,.2);color:#38bdf8;padding:2px 8px;border-radius:12px;border:1px solid rgba(14,165,233,.4);">✨ AI Generated</div>
+          </div>
+          <button id="btnGenerateInsights" onclick="requestAIInsights()" class="btn-fw-primary" style="padding:4px 10px;font-size:.75rem;">
+            <i class="bi bi-stars"></i> Gerar Insights
+          </button>
+        </div>
+        <div class="fgt-card-body" style="overflow-y:auto;max-height:200px;">
+          <ul class="insights-list" id="insightsList">
+            <li><i class="bi bi-arrow-repeat spin insights-icon"></i> Carregando insights...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /charts row -->
+
+  <!-- Policy Directory -->
+  <div style="padding:0;">
+    <div class="fgt-card">
+      <div class="fgt-card-header" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div><i class="bi bi-list-ul"></i> Diretório Global de Regras</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button data-filter="all"        onclick="setFilter('all')"        class="filter-btn badge badge-low filter-active">Todas</button>
+          <button data-filter="inactive"   onclick="setFilter('inactive')"   class="filter-btn badge badge-medium">Sem Tráfego</button>
+          <button data-filter="no_ips"     onclick="setFilter('no_ips')"     class="filter-btn badge badge-high">Sem IPS</button>
+          <button data-filter="web_risk"   onclick="setFilter('web_risk')"   class="filter-btn badge badge-high">Sem WebFilter</button>
+          <button data-filter="any_any"    onclick="setFilter('any_any')"    class="filter-btn badge badge-critical">Any-to-Any</button>
+          <button data-filter="disabled"   onclick="setFilter('disabled')"   class="filter-btn badge" style="background:rgba(100,116,139,.2);color:#94a3b8;border-color:#475569;">Desativadas</button>
+          <button data-filter="unused_60d" onclick="setFilter('unused_60d')" class="filter-btn badge" style="background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.4);">Sem Tráfego +60d</button>
+        </div>
+      </div>
+      <div style="max-height:450px;overflow-y:auto;position:relative;">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Nome</th><th>Source</th><th>Destination</th>
+              <th>Service</th><th>Status</th><th>Último Uso</th><th>Riscos</th>
+            </tr>
+          </thead>
+          <tbody id="policiesTableBody"></tbody>
+        </table>
+        <div id="tableEmptyMsg" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;gap:12px;">
+          <i class="bi bi-search" style="font-size:2rem;color:#475569;"></i>
+          <span class="empty-label" style="color:#64748b;font-size:.9rem;">Nenhuma regra encontrada</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:10px 0;font-size:.75rem;color:#475569;" id="lastScanTime">Last Update: -</div>
+
+</div>
+
+<!-- ================================================================
+     MODALS
+     ================================================================ -->
+
+<!-- Policy Details -->
+<div id="policyModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:1020px;">
+    <div class="modal-header">
+      <div><i class="bi bi-shield-shaded" style="color:var(--fgt-blue);margin-right:6px;"></i> Detalhes da Regra</div>
+      <button class="modal-close" onclick="closeModal('policyModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body" id="policyModalBody">Carregando...</div>
+  </div>
+</div>
+
+<!-- VPN Details -->
+<div id="vpnModal" class="modal-overlay">
+  <div class="modal-content" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 id="vpnModalTitle"><i class="bi bi-shield-lock"></i> VPN Tunnels</h3>
+      <button class="modal-close" onclick="closeModal('vpnModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body" id="vpnModalBody" style="max-height:400px;overflow-y:auto;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="{{ url_for('static', filename='js/report-firewall.js') }}"></script>
+<script>
+  // Toggle rating tooltip
+  const helpTrigger = document.getElementById('ratingHelpTrigger');
+  const tooltipWrapper = document.getElementById('ratingTooltipWrapper');
+  if (helpTrigger) {
+    helpTrigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      tooltipWrapper.classList.toggle('visible');
+    });
+    document.addEventListener('click', function(e) {
+      if (!tooltipWrapper.contains(e.target) && e.target !== helpTrigger) {
+        tooltipWrapper.classList.remove('visible');
+      }
+    });
+  }
+</script>
+{% endblock %}

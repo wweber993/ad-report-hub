@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+{% block title %}Gestão de Usuários{% endblock %}
+
+{% block breadcrumb %}
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span>Administração</span>
+  <span class="bc-sep"><i class="bi bi-chevron-right"></i></span>
+  <span class="bc-current">Usuários</span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* user cards */
+.user-card { display:flex!important; align-items:center!important; gap:14px; padding:14px 18px;
+  border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s;
+  border-left:3px solid transparent; }
+.user-card:last-child { border-bottom:none; }
+.user-card:hover { background:var(--bg-hover); }
+.user-card.selected { background:rgba(56,189,248,0.07); border-left-color:var(--accent); }
+.user-card-avatar { width:40px;height:40px;border-radius:50%;display:flex!important;
+  align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff; }
+.user-card-info { flex:1;min-width:0; }
+.user-card-name { font-weight:600;font-size:0.9rem;color:var(--text-primary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.user-card-email { font-size:0.78rem;color:var(--text-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.user-card-badges { display:flex!important;gap:6px;flex-shrink:0; }
+
+/* drawer */
+.um-drawer-avatar { width:52px;height:52px;border-radius:50%;display:flex!important;
+  align-items:center;justify-content:center;font-weight:700;font-size:1.3rem;
+  background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;flex-shrink:0; }
+
+/* fields */
+.um-field { margin-bottom:14px; }
+.um-field label { display:block;font-size:0.8rem;font-weight:600;
+  color:var(--text-secondary);margin-bottom:5px; }
+.um-field input[type=text], .um-field input[type=email] {
+  width:100%;background:var(--bg-primary);border:1px solid var(--border);
+  border-radius:8px;color:var(--text-primary);font-size:0.88rem;padding:9px 12px;
+  outline:none;transition:border-color 0.15s;box-sizing:border-box; }
+.um-field input:focus { border-color:var(--accent); }
+
+/* module chips */
+.module-chip { display:flex!important;align-items:center;gap:8px;
+  background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;
+  padding:8px 10px;cursor:pointer;transition:border-color 0.15s,background 0.15s;
+  font-size:0.78rem;color:var(--text-secondary);user-select:none; }
+.module-chip-dot { width:8px;height:8px;border-radius:50%;background:var(--border);
+  flex-shrink:0;transition:background 0.15s; }
+.module-chip.checked { border-color:var(--accent);background:rgba(56,189,248,0.08);
+  color:var(--text-primary); }
+.module-chip.checked .module-chip-dot { background:var(--accent); }
+
+/* danger zone */
+.danger-zone { margin-top:4px;padding:14px;border:1px solid rgba(244,63,94,0.25);
+  border-radius:8px;background:rgba(244,63,94,0.04); }
+.danger-title { font-size:0.72rem;font-weight:700;letter-spacing:0.6px;
+  text-transform:uppercase;color:var(--red);margin-bottom:10px; }
+
+/* search */
+.um-search { position:relative; }
+.um-search input { width:100%;background:var(--bg-primary);border:1px solid var(--border);
+  border-radius:8px;color:var(--text-primary);font-size:0.88rem;padding:9px 12px 9px 36px;
+  outline:none;box-sizing:border-box; }
+.um-search input:focus { border-color:var(--accent); }
+.um-search i { position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  color:var(--text-muted);pointer-events:none; }
+
+/* toast */
+.um-toast-item { display:flex!important;align-items:center;gap:10px;min-width:260px;
+  background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;
+  padding:12px 18px;font-size:0.85rem;color:var(--text-primary);
+  box-shadow:var(--shadow-lg);animation:fadeUp 0.2s ease; }
+.um-toast-item.success { border-left:3px solid var(--green); }
+.um-toast-item.danger  { border-left:3px solid var(--red); }
+.um-toast-item.warning { border-left:3px solid #f59e0b; }
+
+/* section label */
+.um-section-lbl { font-size:0.68rem;font-weight:700;letter-spacing:0.8px;
+  text-transform:uppercase;color:var(--text-muted);margin:0 0 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fade-up">
+
+  <!-- Header -->
+  <div class="page-header" style="margin-bottom:20px;">
+    <div class="page-title">
+      <div class="page-title-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      Gestão de Usuários
+    </div>
+    <button class="btn-hub btn-primary" onclick="openNewModal()">
+      <i class="bi bi-person-plus-fill"></i> Novo Usuário
+    </button>
+  </div>
+
+  <!-- Stats (using native cyberhub classes) -->
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-card" style="--stat-color:var(--accent);--stat-color-dim:rgba(56,189,248,0.1);">
+      <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+      <div>
+        <div class="stat-value">{{ users|length }}</div>
+        <div class="stat-label">Total</div>
+      </div>
+    </div>
+    <div class="stat-card" style="--stat-color:#fbbf24;--stat-color-dim:rgba(251,191,36,0.1);">
+      <div class="stat-icon"><i class="bi bi-shield-fill-check"></i></div>
+      <div>
+        <div class="stat-value">{{ users|selectattr('is_admin')|list|length }}</div>
+        <div class="stat-label">Admins</div>
+      </div>
+    </div>
+    <div class="stat-card" style="--stat-color:var(--green);--stat-color-dim:rgba(16,185,129,0.1);">
+      <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+      <div>
+        <div class="stat-value">{{ users|rejectattr('is_locked')|list|length }}</div>
+        <div class="stat-label">Ativos</div>
+      </div>
+    </div>
+    <div class="stat-card" style="--stat-color:var(--red);--stat-color-dim:rgba(244,63,94,0.1);">
+      <div class="stat-icon"><i class="bi bi-lock-fill"></i></div>
+      <div>
+        <div class="stat-value">{{ users|selectattr('is_locked')|list|length }}</div>
+        <div class="stat-label">Bloqueados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div id="umGrid" style="display:grid;grid-template-columns:1fr;gap:24px;align-items:start;">
+
+    <!-- User list -->
+    <div class="card-hub" style="padding:0;overflow:hidden;">
+      <div class="card-hub-header" style="padding:14px 18px;">
+        <i class="bi bi-people" style="color:var(--accent);"></i>
+        Usuários
+        <div class="um-search" style="margin-left:auto;width:220px;">
+          <i class="bi bi-search"></i>
+          <input type="text" id="umSearch" placeholder="Buscar..." oninput="filterUsers()">
+        </div>
+      </div>
+      <div id="userList">
+        {% for user in users %}
+        <div class="user-card" id="card-{{ user.id }}"
+             data-uid="{{ user.id }}"
+             data-username="{{ user.username }}"
+             data-email="{{ user.email }}"
+             data-is-admin="{{ 'true' if user.is_admin else 'false' }}"
+             data-is-locked="{{ 'true' if user.is_locked else 'false' }}"
+             data-modules='{{ user.get_modules()|tojson }}'
+             data-last-login="{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else '' }}"
+             data-is-self="{{ 'true' if user.id == current_user.id else 'false' }}"
+             onclick="selectUser(this)">
+          <div class="user-card-avatar">{{ user.username[0]|upper }}</div>
+          <div class="user-card-info">
+            <div class="user-card-name">{{ user.username }}</div>
+            <div class="user-card-email">{{ user.email }}</div>
+          </div>
+          <div class="user-card-badges">
+            {% if user.is_admin %}
+              <span class="badge-hub badge-warning"><i class="bi bi-shield-fill-check"></i> Admin</span>
+            {% else %}
+              <span class="badge-hub badge-muted"><i class="bi bi-person-fill"></i> Analista</span>
+            {% endif %}
+            {% if user.is_locked %}
+              <span class="badge-hub badge-danger" style="margin-left:2px;"><i class="bi bi-lock-fill"></i></span>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div style="padding:40px;text-align:center;color:var(--text-muted);">
+          <i class="bi bi-people" style="font-size:2.5rem;opacity:0.2;display:block;margin-bottom:10px;"></i>
+          Nenhum usuário cadastrado.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Drawer -->
+    <div id="umDrawer" style="display:none;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);overflow:hidden;position:sticky;top:80px;">
+
+      <!-- Drawer header -->
+      <div style="padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+        <div class="um-drawer-avatar" id="dAvatar">?</div>
+        <div style="flex:1;min-width:0;">
+          <div id="dName" style="font-weight:700;font-size:1rem;color:var(--text-primary);"></div>
+          <div id="dEmail" style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;"></div>
+          <div id="dMeta" style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;"></div>
+        </div>
+        <button onclick="closeDrawer()" title="Fechar"
+                style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px;border-radius:6px;line-height:1;">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Edit form -->
+      <form id="editForm" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div style="padding:20px;">
+          <p class="um-section-lbl">Identidade</p>
+          <div class="um-field">
+            <label>Usuário</label>
+            <input type="text" id="fUser" name="username" required placeholder="nome.sobrenome">
+          </div>
+          <div class="um-field">
+            <label>E-mail</label>
+            <input type="email" id="fEmail" name="email" required placeholder="usuario@empresa.com">
+          </div>
+
+          <p class="um-section-lbl" style="margin-top:6px;">Módulos com Acesso</p>
+          <p style="font-size:0.74rem;color:var(--text-muted);margin:-6px 0 10px;">Sem seleção = acesso total.</p>
+          <div id="drawerModules" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+            {% for slug, label in all_modules.items() %}
+            <label class="module-chip" id="chip-{{ slug }}" onclick="toggleChip(this)">
+              <input type="checkbox" name="modules" value="{{ slug }}" style="display:none;">
+              <span class="module-chip-dot"></span>
+              <span>{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;flex-direction:column;gap:8px;padding:16px 20px 20px;border-top:1px solid var(--border);">
+          <div style="display:flex;gap:8px;">
+            <button type="submit" class="btn-hub btn-primary" style="flex:1;justify-content:center;">
+              <i class="bi bi-check-lg"></i> Salvar
+            </button>
+            <button type="button" id="btnToggleAdmin" class="btn-hub btn-secondary"
+                    onclick="doToggleAdmin()" style="flex:1;justify-content:center;">
+              <i class="bi bi-shield-fill"></i> <span id="lblAdmin">Tornar Admin</span>
+            </button>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn-hub btn-secondary" onclick="doResetPwd()"
+                    style="flex:1;justify-content:center;font-size:0.82rem;">
+              <i class="bi bi-key-fill"></i> Redefinir Senha
+            </button>
+            <button type="button" id="btnUnlock" class="btn-hub btn-secondary" onclick="doUnlock()"
+                    style="display:none;flex:1;justify-content:center;font-size:0.82rem;">
+              <i class="bi bi-unlock-fill"></i> Desbloquear
+            </button>
+          </div>
+          <div class="danger-zone">
+            <div class="danger-title"><i class="bi bi-exclamation-triangle-fill"></i> Zona de Perigo</div>
+            <button type="button" class="btn-hub btn-danger btn-sm" onclick="doDelete()" id="btnDelete"
+                    style="width:100%;justify-content:center;font-size:0.82rem;">
+              <i class="bi bi-trash-fill"></i> Excluir Usuário
+            </button>
+          </div>
+        </div>
+      </form>
+    </div><!-- /drawer -->
+
+  </div><!-- /umGrid -->
+</div><!-- /fade-up -->
+
+<!-- ── New user modal ─────────────────────────────────────────────── -->
+<div id="overlayNew"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;
+            align-items:center;justify-content:center;backdrop-filter:blur(3px);"
+     onclick="if(event.target===this)closeNewModal()">
+  <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);
+              padding:28px;width:90%;max-width:460px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h5 style="margin:0;font-size:1rem;font-weight:700;">
+        <i class="bi bi-person-plus-fill" style="color:var(--accent);margin-right:8px;"></i>Novo Usuário
+      </h5>
+      <button onclick="closeNewModal()"
+              style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px;border-radius:6px;line-height:1;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <form action="{{ url_for('admin.create_user') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="um-field">
+        <label>Usuário</label>
+        <input type="text" name="username" required autofocus placeholder="nome.sobrenome"
+               style="width:100%;background:var(--bg-primary);border:1px solid var(--border);
+                      border-radius:8px;color:var(--text-primary);font-size:0.88rem;
+                      padding:9px 12px;box-sizing:border-box;outline:none;">
+      </div>
+      <div class="um-field">
+        <label>E-mail</label>
+        <input type="email" name="email" required placeholder="usuario@empresa.com"
+               style="width:100%;background:var(--bg-primary);border:1px solid var(--border);
+                      border-radius:8px;color:var(--text-primary);font-size:0.88rem;
+                      padding:9px 12px;box-sizing:border-box;outline:none;">
+      </div>
+      <div class="um-field" style="margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;
+                      font-size:0.85rem;font-weight:600;color:var(--text-secondary);">
+          <input type="checkbox" name="is_admin" style="width:15px;height:15px;accent-color:var(--accent);">
+          Perfil Administrador
+        </label>
+      </div>
+      <p class="um-section-lbl">Módulos com Acesso</p>
+      <p style="font-size:0.74rem;color:var(--text-muted);margin:-6px 0 10px;">Sem seleção = acesso total.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+        {% for slug, label in all_modules.items() %}
+        <label class="module-chip" onclick="toggleChip(this)">
+          <input type="checkbox" name="modules" value="{{ slug }}" style="display:none;">
+          <span class="module-chip-dot"></span>
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <button type="submit" class="btn-hub btn-primary" style="flex:1;justify-content:center;">
+          <i class="bi bi-check-lg"></i> Criar Usuário
+        </button>
+        <button type="button" class="btn-hub btn-secondary" onclick="closeNewModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Confirm overlay ────────────────────────────────────────────── -->
+<div id="overlayConfirm"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;
+            align-items:center;justify-content:center;backdrop-filter:blur(3px);"
+     onclick="if(event.target===this)closeConfirm()">
+  <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);
+              padding:28px;max-width:400px;width:90%;text-align:center;">
+    <div style="width:48px;height:48px;border-radius:12px;background:rgba(244,63,94,0.1);
+                color:var(--red);display:flex;align-items:center;justify-content:center;
+                font-size:20px;margin:0 auto 14px;">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+    <h5 id="confTitle" style="margin:0 0 8px;"></h5>
+    <p id="confMsg" style="margin:0 0 20px;color:var(--text-secondary);font-size:0.88rem;"></p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button id="confOk" class="btn-hub btn-danger"><i class="bi bi-check-lg"></i> Confirmar</button>
+      <button class="btn-hub btn-secondary" onclick="closeConfirm()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Hidden action forms ────────────────────────────────────────── -->
+<form id="frmReset"  method="POST" style="display:none;"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
+<form id="frmDelete" method="POST" style="display:none;"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
+
+<!-- ── Toast ──────────────────────────────────────────────────────── -->
+<div id="umToast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let activeUid  = null;
+let activeCard = null;
+
+/* chip toggle */
+function toggleChip(chip) {
+  event.preventDefault();
+  var cb = chip.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  chip.classList.toggle('checked', cb.checked);
+}
+
+/* open drawer */
+function selectUser(card) {
+  if (activeCard) activeCard.classList.remove('selected');
+  activeCard = card;
+  card.classList.add('selected');
+
+  activeUid = card.dataset.uid;
+  var username  = card.dataset.username;
+  var email     = card.dataset.email;
+  var isAdmin   = card.dataset.isAdmin === 'true';
+  var isLocked  = card.dataset.isLocked === 'true';
+  var isSelf    = card.dataset.isSelf === 'true';
+  var modules   = JSON.parse(card.dataset.modules || '[]');
+  var lastLogin = card.dataset.lastLogin;
+
+  document.getElementById('dAvatar').textContent = username[0].toUpperCase();
+  document.getElementById('dName').textContent   = username;
+  document.getElementById('dEmail').textContent  = email;
+  document.getElementById('dMeta').textContent   = lastLogin ? 'Último acesso: ' + lastLogin : 'Nunca acessou';
+
+  document.getElementById('fUser').value  = username;
+  document.getElementById('fEmail').value = email;
+  document.getElementById('editForm').action = '/admin/users/' + activeUid + '/edit';
+
+  document.querySelectorAll('#drawerModules .module-chip').forEach(function(chip) {
+    var cb = chip.querySelector('input[type=checkbox]');
+    cb.checked = modules.includes(cb.value);
+    chip.classList.toggle('checked', cb.checked);
+  });
+
+  document.getElementById('lblAdmin').textContent = isAdmin ? 'Remover Admin' : 'Tornar Admin';
+  document.getElementById('btnToggleAdmin').style.display = isSelf ? 'none' : '';
+  document.getElementById('btnUnlock').style.display = isLocked ? 'flex' : 'none';
+  document.getElementById('btnDelete').style.display = isSelf ? 'none' : '';
+
+  /* show drawer + 2-column grid */
+  document.getElementById('umDrawer').style.display = 'block';
+  document.getElementById('umGrid').style.gridTemplateColumns = '1fr 390px';
+}
+
+function closeDrawer() {
+  document.getElementById('umDrawer').style.display = 'none';
+  document.getElementById('umGrid').style.gridTemplateColumns = '1fr';
+  if (activeCard) activeCard.classList.remove('selected');
+  activeCard = null; activeUid = null;
+}
+
+/* toggle admin */
+function doToggleAdmin() {
+  if (!activeUid) return;
+  fetch('/admin/users/' + activeUid + '/toggle-admin', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': CSRF, 'Content-Type': 'application/json' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) { showToast(data.error, 'danger'); return; }
+    var card = document.getElementById('card-' + activeUid);
+    card.dataset.isAdmin = data.is_admin ? 'true' : 'false';
+    var bd = card.querySelector('.user-card-badges');
+    var lockBadge = (data.is_locked) ? '<span class="badge-hub badge-danger" style="margin-left:2px;"><i class="bi bi-lock-fill"></i></span>' : '';
+    bd.innerHTML = data.is_admin
+      ? '<span class="badge-hub badge-warning"><i class="bi bi-shield-fill-check"></i> Admin</span>' + lockBadge
+      : '<span class="badge-hub badge-muted"><i class="bi bi-person-fill"></i> Analista</span>' + lockBadge;
+    document.getElementById('lblAdmin').textContent = data.is_admin ? 'Remover Admin' : 'Tornar Admin';
+    showToast('Perfil: ' + data.role, 'success');
+  });
+}
+
+/* reset password */
+function doResetPwd() {
+  if (!activeUid) return;
+  var name = document.getElementById('fUser').value;
+  openConfirm('Redefinir Senha', 'Gerar nova senha para <strong>' + name + '</strong>?', function() {
+    document.getElementById('frmReset').action = '/admin/users/' + activeUid + '/reset-password';
+    document.getElementById('frmReset').submit();
+  });
+}
+
+/* unlock */
+function doUnlock() {
+  if (!activeUid) return;
+  fetch('/admin/users/' + activeUid + '/unlock', {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': CSRF, 'Content-Type': 'application/json' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (!data.ok) return;
+    document.getElementById('btnUnlock').style.display = 'none';
+    var card = document.getElementById('card-' + activeUid);
+    card.dataset.isLocked = 'false';
+    var lb = card.querySelector('.badge-danger');
+    if (lb) lb.remove();
+    showToast('Conta desbloqueada.', 'success');
+  });
+}
+
+/* delete */
+function doDelete() {
+  if (!activeUid) return;
+  var name = document.getElementById('fUser').value;
+  openConfirm('Excluir Usuário', 'Excluir <strong>' + name + '</strong>? Ação irreversível.', function() {
+    document.getElementById('frmDelete').action = '/admin/users/' + activeUid + '/delete';
+    document.getElementById('frmDelete').submit();
+  });
+}
+
+/* new user modal */
+function openNewModal()  { document.getElementById('overlayNew').style.display = 'flex'; }
+function closeNewModal() { document.getElementById('overlayNew').style.display = 'none'; }
+
+/* confirm */
+var _confCb = null;
+function openConfirm(title, msg, cb) {
+  _confCb = cb;
+  document.getElementById('confTitle').textContent = title;
+  document.getElementById('confMsg').innerHTML = msg;
+  document.getElementById('confOk').onclick = function() { closeConfirm(); if (_confCb) _confCb(); };
+  document.getElementById('overlayConfirm').style.display = 'flex';
+}
+function closeConfirm() { document.getElementById('overlayConfirm').style.display = 'none'; }
+
+/* toast */
+function showToast(msg, type) {
+  var icons  = { success:'check-circle-fill', danger:'x-circle-fill', warning:'exclamation-triangle-fill' };
+  var colors = { success:'var(--green)', danger:'var(--red)', warning:'#f59e0b' };
+  type = type || 'success';
+  var el = document.createElement('div');
+  el.className = 'um-toast-item ' + type;
+  el.style.pointerEvents = 'auto';
+  el.innerHTML = '<i class="bi bi-' + (icons[type]||icons.success) + '" style="color:' + (colors[type]||colors.success) + ';font-size:16px;flex-shrink:0;"></i>' + msg;
+  document.getElementById('umToast').appendChild(el);
+  setTimeout(function() { el.remove(); }, 3500);
+}
+
+/* filter */
+function filterUsers() {
+  var q = document.getElementById('umSearch').value.toLowerCase();
+  document.querySelectorAll('.user-card').forEach(function(c) {
+    c.style.display = (c.dataset.username + c.dataset.email).toLowerCase().includes(q) ? 'flex' : 'none';
+  });
+}
+
+/* flash messages as toasts */
+{% with messages = get_flashed_messages(with_categories=true) %}{% for cat, msg in messages %}
+showToast('{{ msg|e }}', '{{ cat }}');
+{% endfor %}{% endwith %}
+</script>
+{% endblock %}

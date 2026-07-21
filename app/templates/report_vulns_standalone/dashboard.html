@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Interativo de Vulnerabilidades</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7fa; padding: 20px; }
+    h1 { text-align: center; color: #1a2942; margin-bottom: 6px; font-size: 22px; }
+    .data-geracao { text-align: center; color: #777; font-size: 13px; margin-bottom: 16px; }
+    .filtro-bar { text-align: center; margin-bottom: 20px; }
+    .filtro-bar select { font-size: 14px; padding: 6px 12px; border-radius: 6px;
+      border: 1px solid #ccc; background: #fff; }
+    .kpi-bar { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .kpi-card { background: white; border-radius: 10px; padding: 14px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-align: center; min-width: 130px; }
+    .kpi-card .kpi-val { font-size: 28px; font-weight: 700; color: #1a2942; }
+    .kpi-card .kpi-lbl { font-size: 12px; color: #888; margin-top: 2px; }
+    .linha { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin-bottom: 20px; }
+    .grafico { flex: 1 1 440px; background: white; padding: 18px; border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-width: 620px; }
+    .grafico h3 { font-size: 14px; color: #555; margin-bottom: 12px; text-align: center; }
+    canvas { max-height: 260px !important; }
+  </style>
+</head>
+<body>
+
+<h1>Dashboard Interativo de Vulnerabilidades</h1>
+<div class="data-geracao" id="dataGeracao">Carregando dados...</div>
+
+<div class="filtro-bar">
+  <label for="ambiente"><strong>Ambiente:</strong></label>
+  <select id="ambiente" onchange="atualizarGraficos()"></select>
+</div>
+
+<div class="kpi-bar">
+  <div class="kpi-card"><div class="kpi-val" id="kpiTotal">—</div><div class="kpi-lbl">Total Vulns</div></div>
+  <div class="kpi-card"><div class="kpi-val" id="kpiCritica" style="color:#c0392b">—</div><div class="kpi-lbl">Crítica</div></div>
+  <div class="kpi-card"><div class="kpi-val" id="kpiAlta" style="color:#e67e22">—</div><div class="kpi-lbl">Alta</div></div>
+  <div class="kpi-card"><div class="kpi-val" id="kpiAcima60" style="color:#8e44ad">—</div><div class="kpi-lbl">Acima 60 dias</div></div>
+</div>
+
+<div class="linha">
+  <div class="grafico"><h3>Vulnerabilidades por Faixa de Dias</h3><canvas id="chartFaixa"></canvas></div>
+  <div class="grafico"><h3>Críticas e Altas por Severidade</h3><canvas id="chartSeveridade"></canvas></div>
+</div>
+
+<div class="linha">
+  <div class="grafico"><h3>Top 10 Vulnerabilidades Mais Frequentes</h3><canvas id="chartTop10"></canvas></div>
+  <div class="grafico"><h3>Top 10 Vulnerabilidades com Mais Dias Ativos</h3><canvas id="chartTopDias"></canvas></div>
+</div>
+
+<script>
+let dadosGlobal = {};
+let charts = {};
+
+async function init() {
+  const resp = await fetch('/vulns/data/dashboard');
+  dadosGlobal = await resp.json();
+
+  const sel = document.getElementById('ambiente');
+  const ordem = ['Todos', ...Object.keys(dadosGlobal).filter(k => k !== 'Todos').sort()];
+  ordem.forEach(amb => {
+    if (dadosGlobal[amb]) {
+      const opt = document.createElement('option');
+      opt.value = amb;
+      opt.textContent = amb;
+      sel.appendChild(opt);
+    }
+  });
+  sel.value = 'Todos';
+  document.getElementById('dataGeracao').textContent = 'Gerado dinamicamente com base no JSON';
+  atualizarGraficos();
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function atualizarGraficos() {
+  const amb = document.getElementById('ambiente').value;
+  const d = dadosGlobal[amb];
+  if (!d) return;
+
+  // KPIs
+  document.getElementById('kpiTotal').textContent = d.vulns ?? 0;
+  document.getElementById('kpiCritica').textContent = (d.severidade && d.severidade['Crítica']) || 0;
+  document.getElementById('kpiAlta').textContent = (d.severidade && d.severidade['Alta']) || 0;
+  document.getElementById('kpiAcima60').textContent = (d.faixa && d.faixa['Acima de 60 dias']) || 0;
+
+  // Chart — Faixa de dias
+  destroyChart('chartFaixa');
+  const faixaLabels = ['0 a 30 dias', '31 a 60 dias', 'Acima de 60 dias'];
+  const faixaData   = faixaLabels.map(l => (d.faixa && d.faixa[l]) || 0);
+  charts['chartFaixa'] = new Chart(document.getElementById('chartFaixa'), {
+    type: 'doughnut',
+    data: {
+      labels: faixaLabels,
+      datasets: [{ data: faixaData,
+        backgroundColor: ['#27ae60', '#f39c12', '#c0392b'],
+        borderWidth: 2 }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Chart — Severidade
+  destroyChart('chartSeveridade');
+  const sevLabels = ['Crítica', 'Alta'];
+  const sevData   = sevLabels.map(l => (d.severidade && d.severidade[l]) || 0);
+  charts['chartSeveridade'] = new Chart(document.getElementById('chartSeveridade'), {
+    type: 'bar',
+    data: {
+      labels: sevLabels,
+      datasets: [{ label: 'Vulnerabilidades', data: sevData,
+        backgroundColor: ['#c0392b', '#e67e22'], borderRadius: 6 }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } },
+               plugins: { legend: { display: false } } }
+  });
+
+  // Chart — Top 10 Frequentes
+  destroyChart('chartTop10');
+  if (d.top10) {
+    const t10Labels = Object.keys(d.top10).map(l => l.length > 45 ? l.substring(0,45)+'…' : l);
+    const t10Data   = Object.values(d.top10);
+    charts['chartTop10'] = new Chart(document.getElementById('chartTop10'), {
+      type: 'bar',
+      data: {
+        labels: t10Labels,
+        datasets: [{ label: 'Ocorrências', data: t10Data,
+          backgroundColor: '#3498db', borderRadius: 4 }]
+      },
+      options: { responsive: true, indexAxis: 'y',
+                 scales: { x: { beginAtZero: true } },
+                 plugins: { legend: { display: false } } }
+    });
+  }
+
+  // Chart — Top Dias Ativos
+  destroyChart('chartTopDias');
+  if (d.top_dias) {
+    const tdLabels = Object.keys(d.top_dias).map(l => l.length > 45 ? l.substring(0,45)+'…' : l);
+    const tdData   = Object.values(d.top_dias);
+    charts['chartTopDias'] = new Chart(document.getElementById('chartTopDias'), {
+      type: 'bar',
+      data: {
+        labels: tdLabels,
+        datasets: [{ label: 'Média dias ativos', data: tdData,
+          backgroundColor: '#8e44ad', borderRadius: 4 }]
+      },
+      options: { responsive: true, indexAxis: 'y',
+                 scales: { x: { beginAtZero: true } },
+                 plugins: { legend: { display: false } } }
+    });
+  }
+}
+
+init();
+</script>
+</body>
+</html>

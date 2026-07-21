@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Vulnerabilidades | COC</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVaGateJidmszeHdvjlsSLoadk5/infojquery/iPvW5s9gzy4/MVab8i" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sidebar-bg: #111827;
+      --sidebar-hover: #1F2937;
+      --sidebar-active: #06B6D4;
+      --main-bg: #F9FAFB;
+      --text-primary: #1F2937;
+      --text-secondary: #6B7280;
+      --text-light: #F9FAFB;
+      --border-color: #E5E7EB;
+      --header-height: 70px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--main-bg );
+      color: var(--text-primary);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* --- Barra Lateral (Sidebar) --- */
+    #sidebar {
+      width: 260px;
+      background-color: var(--sidebar-bg);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      transition: width 0.3s ease;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px 20px 20px;
+      border-bottom: 1px solid var(--sidebar-hover);
+    }
+
+    .sidebar-header img {
+      height: 40px;
+    }
+
+    .sidebar-header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    #sidebar nav {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px 15px;
+    }
+
+    .nav-category {
+      margin-bottom: 20px;
+    }
+
+    .nav-category-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      padding: 0 10px;
+      margin-bottom: 8px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 10px;
+      border-radius: 6px;
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      margin-bottom: 4px;
+    }
+
+    .nav-link:hover {
+      background-color: var(--sidebar-hover);
+    }
+
+    .nav-link.active {
+      background-color: var(--sidebar-active);
+      color: var(--sidebar-bg);
+      font-weight: 600;
+    }
+    
+    .nav-link.active .nav-icon {
+        color: var(--sidebar-bg);
+    }
+
+    .nav-icon {
+      width: 20px;
+      text-align: center;
+      font-size: 16px;
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
+    }
+
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid var(--sidebar-hover);
+    }
+
+    /* --- Conteúdo Principal --- */
+    #main-content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      height: var(--header-height);
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0 30px;
+      background-color: #FFFFFF;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .logout-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background-color: var(--main-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .logout-button:hover {
+      background-color: #F3F4F6;
+      border-color: #D1D5DB;
+    }
+
+    .content-area {
+      flex-grow: 1;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+    }
+
+    #placeholder {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 40px;
+    }
+
+    #placeholder .placeholder-icon {
+      font-size: 60px;
+      color: var(--sidebar-active);
+      margin-bottom: 20px;
+    }
+
+    #placeholder h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    #placeholder p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 450px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Barra Lateral -->
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <img src="/vulns/data/logo.png" alt="Logo da Empresa">
+    <h1></h1>
+  </div>
+
+  <nav>
+    <div class="nav-category">
+      <a href="#" class="nav-link active" onclick="showHome(this)">
+        <i class="fas fa-home nav-icon"></i>
+        <span>Início</span>
+      </a>
+    </div>
+
+    <div class="nav-category">
+      <p class="nav-category-title">Relatórios</p>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.diario') }}', this)"><i class="fas fa-calendar-day nav-icon"></i><span>Diário</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.total') }}', this)"><i class="fas fa-globe nav-icon"></i><span>Ambiente Completo</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.fixed') }}', this)"><i class="fas fa-check-circle nav-icon"></i><span>Correções (Semanal)</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.fixed_diario') }}', this)"><i class="fas fa-calendar-check nav-icon"></i><span>Correções (Diário)</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.vulns_diario') }}', this)"><i class="fas fa-triangle-exclamation nav-icon"></i><span>Vulnerabilidades Ativas</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.produto') }}', this)"><i class="fas fa-box-open nav-icon"></i><span>Por Produto</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.java') }}', this)"><i class="fab fa-java nav-icon"></i><span>Específico: Java</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.pplr') }}', this)"><i class="fab fa-java nav-icon"></i><span>Compliance Vulnerabilidades</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.exploits') }}', this)"><i class="fab fa-java nav-icon"></i><span>Exploits Ativos</span></a>
+    </div>
+
+    <div class="nav-category">
+      <p class="nav-category-title">Análises</p>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.dashboard') }}', this)"><i class="fas fa-chart-pie nav-icon"></i><span>Dashboard Geral</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.kpi') }}', this)"><i class="fas fa-chart-line nav-icon"></i><span>Gráficos de KPI</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.top5') }}', this)"><i class="fas fa-star nav-icon"></i><span>Top 5 Vulnerabilidades</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.top5_60') }}', this)"><i class="fas fa-star nav-icon"></i><span>Top 5 Vulnerabilidades (+60)</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.comparativo') }}', this)"><i class="fas fa-balance-scale nav-icon"></i><span>Análise Comparativa</span></a>
+    </div>
+
+    <div class="nav-category">
+      <p class="nav-category-title">Ferramentas</p>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.hosts') }}', this)"><i class="fas fa-server nav-icon"></i><span>Consulta de Hosts</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.patch') }}', this)"><i class="fas fa-history nav-icon"></i><span>Recorrência de Patch Windows</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.patch_linux') }}', this)"><i class="fas fa-history nav-icon"></i><span>Recorrência de Patch Linux</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.compliance') }}', this)"><i class="fas fa-history nav-icon"></i><span>Compliance Patch</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.sistemas_operacionais') }}', this)"><i class="fas fa-history nav-icon"></i><span>Sistemas Operacionais</span></a>
+      <a href="#" class="nav-link" onclick="loadContent('{{ url_for('report_vulns.ativos') }}', this)"><i class="fas fa-toggle-off nav-icon"></i><span>Hosts Inativos</span></a>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="#" class="nav-link" onclick="loadContent('{{ url_for('alterar_senha') }}', this)">
+      <i class="fas fa-key nav-icon"></i>
+      <span>Alterar Senha</span>
+    </a>
+  </div>
+</aside>
+
+<!-- Conteúdo Principal -->
+<main id="main-content">
+  <header>
+    <a href="{{ url_for('auth.logout') }}" class="logout-button">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Sair</span>
+    </a>
+  </header>
+
+  <div class="content-area">
+    <div id="placeholder">
+      <i class="fas fa-shield-alt placeholder-icon"></i>
+      <h2>Bem-vindo ao Painel de Vulnerabilidades do COC</h2>
+      <p>Navegue pelos menus à esquerda para visualizar relatórios e analisar dados.</p>
+    </div>
+    <iframe id="content-frame"></iframe>
+  </div>
+</main>
+
+<script>
+  const mainFrame = document.getElementById('content-frame');
+  const placeholder = document.getElementById('placeholder');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  function setActiveLink(element) {
+    navLinks.forEach(link => link.classList.remove('active'));
+    if (element) {
+      element.classList.add('active');
+    }
+  }
+
+  function loadContent(pageUrl, element) {
+    mainFrame.src = pageUrl;
+    mainFrame.style.display = 'block';
+    placeholder.style.display = 'none';
+    setActiveLink(element);
+  }
+
+  function showHome(element) {
+    mainFrame.src = 'about:blank';
+    mainFrame.style.display = 'none';
+    placeholder.style.display = 'flex';
+    setActiveLink(element);
+  }
+
+  // Define o link "Início" como ativo na carga inicial da página.
+  document.addEventListener('DOMContentLoaded', () => {
+    const homeLink = document.querySelector('.nav-link'); // O primeiro link é o "Início"
+    showHome(homeLink);
+  });
+</script>
+
+</body>
+</html>

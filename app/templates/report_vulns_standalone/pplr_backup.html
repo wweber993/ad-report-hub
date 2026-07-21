@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Executivo</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #eef2f7;
+  margin: 0;
+  padding: 35px;
+  color: #2c3e50;
+}
+
+h1 { margin-bottom: 5px; font-size: 24px; }
+.sub { color: #7f8c8d; margin-bottom: 30px; font-size: 14px; }
+
+.section-title { font-weight: 600; margin-bottom: 15px; font-size: 15px; }
+
+.grid-tables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 45px;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #2c3e50; color: white; padding: 10px; }
+td { padding: 8px; text-align: center; }
+td:first-child { text-align: left; font-weight: 600; }
+tr:nth-child(even) { background: #f6f8fb; }
+
+.danger { background: #e74c3c; color: white; font-weight: bold; }
+
+.grid-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.big-chart { margin-top: 40px; padding: 35px; }
+.big-chart canvas { height: 450px !important; }
+
+.kpi-bar {
+  display: flex;
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+.kpi {
+  background: white;
+  padding: 22px 30px;
+  border-radius: 14px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.05);
+  flex: 1;
+  text-align: center;
+}
+
+.kpi span { font-size: 13px; color: #7f8c8d; }
+
+.kpi strong {
+  font-size: 28px;
+  display: block;
+  margin-top: 5px;
+}
+
+.meta-ok { color: #27ae60; }
+.meta-critica { color: #e74c3c; }
+
+.meta-info {
+  font-size: 12px;
+  margin-top: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Dashboard Executivo de Vulnerabilidades</h1>
+<div class="sub" id="dataGeracao"></div>
+
+<!-- KPIs -->
+<div class="kpi-bar">
+
+  <div class="kpi">
+    <span>Total Vulnerabilidades Críticas</span>
+    <strong id="kpiCriticas">0</strong>
+  </div>
+
+  <div class="kpi">
+    <span>Total Críticas &gt; 60 dias — Produto</span>
+    <strong id="kpiProduto60">0</strong>
+  </div>
+
+  <div class="kpi">
+    <span>Total Críticas &gt; 60 dias — Infra</span>
+    <strong id="kpiInfra60">0</strong>
+    <div class="meta-info" id="metaInfo"></div>
+  </div>
+
+</div>
+
+<!-- TABELAS -->
+<div class="grid-tables">
+
+  <div class="card">
+    <div class="section-title">Críticas — Total por Faixa</div>
+    <table id="tabelaCriticas">
+      <thead>
+        <tr>
+          <th>Ambiente</th>
+          <th>Total</th>
+          <th>0-30</th>
+          <th>31-60</th>
+          <th>&gt;60</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Críticas &gt; 60 dias — Infra x Produto</div>
+    <table id="tabela60">
+      <thead>
+        <tr>
+          <th>Ambiente</th>
+          <th>Total</th>
+          <th>Infra</th>
+          <th>Produto</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- GRÁFICOS -->
+<div class="grid-charts">
+
+  <div class="card">
+    <div class="section-title">Top 5 — Críticas</div>
+    <canvas id="graficoCriticas"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Top 5 — Altas</div>
+    <canvas id="graficoAltas"></canvas>
+  </div>
+
+</div>
+
+<div class="card big-chart">
+  <div class="section-title">Ambientes com Vulnerabilidades Críticas + Altas</div>
+  <canvas id="graficoGeral"></canvas>
+</div>
+
+<script>
+fetch('/vulns/data/dashboard_exec')
+.then(r => r.json())
+.then(data => {
+
+  document.getElementById("dataGeracao").innerText =
+    "Atualizado em: " + data.gerado_em;
+
+  let somaInfra60 = 0;
+  let somaProduto60 = 0;
+
+  Object.values(data.ambientes).forEach(val => {
+    somaInfra60 += val.criticas_60.infra || 0;
+    somaProduto60 += val.criticas_60.produto || 0;
+  });
+
+  document.getElementById("kpiCriticas").innerText =
+    data.totais.criticas;
+
+  document.getElementById("kpiProduto60").innerText =
+    somaProduto60;
+
+  const kpiInfra = document.getElementById("kpiInfra60");
+  const metaInfo = document.getElementById("metaInfo");
+
+  kpiInfra.innerText = somaInfra60;
+
+const META = 100;
+
+kpiInfra.innerText = somaInfra60;
+
+// 🔥 Índice PPLR
+let indice = ((META - somaInfra60) / META) * 100;
+
+// Limites
+if (indice < 0) indice = 0;
+if (indice > 100) indice = 100;
+
+indice = indice.toFixed(1);
+
+// Reset classes
+kpiInfra.classList.remove("meta-ok", "meta-critica");
+kpiInfra.style.color = "";
+
+// Cores por desempenho
+if (indice >= 80) {
+  kpiInfra.classList.add("meta-ok");       // verde
+} else if (indice >= 50) {
+  kpiInfra.style.color = "#f39c12";        // amarelo
+} else {
+  kpiInfra.classList.add("meta-critica");  // vermelho
+}
+
+metaInfo.innerText = `Índice PPLR: ${indice}%`;
+
+  const tbodyCrit = document.querySelector("#tabelaCriticas tbody");
+  const tbody60 = document.querySelector("#tabela60 tbody");
+
+  Object.entries(data.ambientes).forEach(([amb, val]) => {
+
+    const totalCrit = val.criticas || 0;
+    const f0 = val.faixa_criticas["0 a 30 dias"] || 0;
+    const f31 = val.faixa_criticas["31 a 60 dias"] || 0;
+    const f60 = val.faixa_criticas["Acima de 60 dias"] || 0;
+
+    tbodyCrit.innerHTML += `
+      <tr>
+        <td>${amb}</td>
+        <td>${totalCrit}</td>
+        <td>${f0}</td>
+        <td>${f31}</td>
+        <td class="${f60 > 0 ? 'danger' : ''}">${f60}</td>
+      </tr>
+    `;
+
+    tbody60.innerHTML += `
+      <tr>
+        <td>${amb}</td>
+        <td>${val.criticas_60.total || 0}</td>
+        <td>${val.criticas_60.infra || 0}</td>
+        <td>${val.criticas_60.produto || 0}</td>
+      </tr>
+    `;
+  });
+
+  const criarGrafico = (id, dados, cor) => {
+    new Chart(document.getElementById(id), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(dados),
+        datasets: [{
+          data: Object.values(dados),
+          backgroundColor: cor
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: 'end',
+            align: 'end',
+            font: { weight: 'bold' }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks:{ precision:0 } }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+  };
+
+  criarGrafico("graficoCriticas", data.top5.criticas, "#c0392b");
+  criarGrafico("graficoAltas", data.top5.altas, "#e67e22");
+
+  new Chart(document.getElementById("graficoGeral"), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(data.criticas_altas_todos),
+      datasets: [{
+        data: Object.values(data.criticas_altas_todos),
+        backgroundColor: "#e74c3c"
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          font: { weight: 'bold', size: 12 }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks:{ precision: 0 } },
+        x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 30 } }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+
+});
+</script>
+
+</body>
+</html>
