@@ -91,6 +91,7 @@ cp .env.example .env
 nano .env
 
 # 5. Initialize database and create the first administrator
+flask db upgrade
 python create_admin.py
 ```
 

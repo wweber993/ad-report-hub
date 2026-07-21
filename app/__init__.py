@@ -63,10 +63,9 @@ def create_app() -> Flask:
             session["csrf_token"] = os.urandom(24).hex()
         return dict(csrf_token=session.get("csrf_token", ""))
 
-    # ── Create DB tables ───────────────────────────────────────────
+    # ── Create DB Directory ─────────────────────────────────────────
     with app.app_context():
         os.makedirs(Config.DATA_DIR, exist_ok=True)
-        db.create_all()
 
     # ── Blueprints ─────────────────────────────────────────────────
     from app.auth.routes    import auth_bp

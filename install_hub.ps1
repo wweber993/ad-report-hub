@@ -58,7 +58,9 @@ Write-Host "[✔] Dependencies installed!" -ForegroundColor Green
 
 Write-Host "`n--- Database Setup ---" -ForegroundColor Cyan
 Write-Host "[+] Initializing database..."
-# The app creates the database on first import if not exist, so running create_admin.py handles it
+# Run database migrations to create the schema
+.\venv\Scripts\python -m flask db upgrade
+# Create the initial admin user
 .\venv\Scripts\python create_admin.py
 
 Write-Host "`n==========================================================" -ForegroundColor Cyan
