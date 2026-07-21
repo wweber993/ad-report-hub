@@ -85,7 +85,7 @@ if ($InstallTask) {
     $TaskName = "ADReportHub_Collector"
     $ScriptPath = $PSCommandPath
 
-    Write-Host "[+] Creating Scheduled Task '$TaskName' to run daily at $TaskTime..." -ForegroundColor Cyan
+    Write-Host "[+] Criando Tarefa Agendada '$TaskName' para rodar diariamente as $TaskTime..." -ForegroundColor Cyan
 
     try {
         $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -File `"$ScriptPath`""
@@ -94,10 +94,10 @@ if ($InstallTask) {
 
         Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
         
-        Write-Host "[✔] Scheduled Task '$TaskName' successfully registered to run daily at $TaskTime!" -ForegroundColor Green
+        Write-Host "[✔] Tarefa Agendada '$TaskName' registrada com sucesso para rodar as $TaskTime!" -ForegroundColor Green
     }
     catch {
-        Write-Error "Failed to create scheduled task: $_"
+        Write-Error "Falha ao criar tarefa agendada: $_"
     }
     exit
 }
@@ -111,8 +111,8 @@ Write-Host "         AD Report Hub — Active Directory Data Collector        " 
 Write-Host "================================================================" -ForegroundColor Cyan
 
 if (-not (Get-Module -ListAvailable -Name ActiveDirectory)) {
-    Write-Error "The ActiveDirectory PowerShell module (RSAT) is not installed on this system."
-    Write-Host "Please install Remote Server Administration Tools (RSAT) or run on a Domain Joined server." -ForegroundColor Yellow
+    Write-Error "O módulo PowerShell ActiveDirectory (RSAT) não está instalado neste sistema."
+    Write-Host "Por favor instale o Remote Server Administration Tools (RSAT) ou execute em um servidor ingressado no Domínio." -ForegroundColor Yellow
     exit 1
 }
 
@@ -150,11 +150,11 @@ $discoveredDCs = @()
 
 if ($CONFIG.UseAutoDC) {
     try {
-        Write-Host "[+] Auto-discovering Domain Controllers..." -ForegroundColor Green
+        Write-Host "[+] Descobrindo Controladores de Domínio automaticamente..." -ForegroundColor Green
         $discoveredDCs = (Get-ADDomainController -Filter *).HostName
     }
     catch {
-        Write-Warning "Could not auto-discover Domain Controllers: $_"
+        Write-Warning "Não foi possível descobrir Controladores de Domínio: $_"
     }
 }
 else {
@@ -168,11 +168,11 @@ else {
 try {
     $policy = Get-ADDefaultDomainPasswordPolicy -ErrorAction Stop
     $maxPasswordAge = $policy.MaxPasswordAge.Days
-    Write-Host "[+] Domain Default Password Policy Max Age: $maxPasswordAge days" -ForegroundColor Green
+    Write-Host "[+] Idade Máxima da Política de Senha Padrão do Domínio: $maxPasswordAge dias" -ForegroundColor Green
 }
 catch {
     $maxPasswordAge = [int]$CONFIG.PasswordMaxAgeDays
-    Write-Host "[!] Could not fetch default password policy. Using fallback: $maxPasswordAge days" -ForegroundColor Yellow
+    Write-Host "[!] Não foi possível obter a política de senha. Usando fallback: $maxPasswordAge dias" -ForegroundColor Yellow
 }
 
 # ==============================================================================
@@ -247,38 +247,38 @@ $users = @()
 if ($CONFIG.SearchBases -and $CONFIG.SearchBases.Count -gt 0) {
     foreach ($base in $CONFIG.SearchBases) {
         if ([string]::IsNullOrWhiteSpace($base)) { continue }
-        Write-Host "[+] Querying users in SearchBase: $base" -ForegroundColor Cyan
+        Write-Host "[+] Consultando usuários na SearchBase: $base" -ForegroundColor Cyan
         try {
             $users += Get-ADUser -Filter * -SearchBase $base.Trim() -Properties *
         }
         catch {
-            Write-Warning "Failed to query SearchBase '$base': $_"
+            Write-Warning "Falha ao consultar SearchBase '$base': $_"
         }
     }
 }
 elseif (-not [string]::IsNullOrWhiteSpace($CONFIG.SearchBase)) {
-    Write-Host "[+] Querying users in SearchBase: $($CONFIG.SearchBase)" -ForegroundColor Cyan
+    Write-Host "[+] Consultando usuários na SearchBase: $($CONFIG.SearchBase)" -ForegroundColor Cyan
     try {
         $users = Get-ADUser -Filter * -SearchBase $CONFIG.SearchBase -Properties *
     }
     catch {
-        Write-Warning "Failed to query SearchBase '$($CONFIG.SearchBase)': $_"
+        Write-Warning "Falha ao consultar SearchBase '$($CONFIG.SearchBase)': $_"
     }
 }
 else {
-    Write-Host "[+] Querying domain-wide users (Domain Root)..." -ForegroundColor Cyan
+    Write-Host "[+] Consultando usuários em todo o domínio (Raiz do Domínio)..." -ForegroundColor Cyan
     try {
         $users = Get-ADUser -Filter * -Properties *
     }
     catch {
-        Write-Error "Failed to query domain users: $_"
+        Write-Error "Falha ao consultar usuários do domínio: $_"
         exit 1
     }
 }
 
 # Additional Privileged Accounts Domain-Wide
 if (-not [string]::IsNullOrWhiteSpace($CONFIG.SearchPrivilege)) {
-    Write-Host "[+] Querying additional privileged users in: $($CONFIG.SearchPrivilege)" -ForegroundColor Cyan
+    Write-Host "[+] Consultando usuários privilegiados adicionais em: $($CONFIG.SearchPrivilege)" -ForegroundColor Cyan
     $privNames = @(
         "Domain Admins", "Enterprise Admins", "Schema Admins",
         "Administrators", "Account Operators", "Server Operators",
@@ -298,7 +298,7 @@ if (-not [string]::IsNullOrWhiteSpace($CONFIG.SearchPrivilege)) {
 
 # Remove Duplicate Accounts
 $users = $users | Sort-Object SamAccountName -Unique
-Write-Host "[+] Total unique accounts found: $($users.Count)" -ForegroundColor Green
+Write-Host "[+] Total de contas únicas encontradas: $($users.Count)" -ForegroundColor Green
 
 # ==============================================================================
 # PROCESS USERS & RISK SCORING
@@ -311,7 +311,7 @@ $totalUsers = $users.Count
 foreach ($user in $users) {
     $counter++
     if ($totalUsers -gt 0) {
-        Write-Progress -Activity "Processing AD Accounts" -Status "Account $counter of $totalUsers ($($user.SamAccountName))" -PercentComplete (($counter / $totalUsers) * 100)
+        Write-Progress -Activity "Processando Contas do AD" -Status "Conta $counter de $totalUsers ($($user.SamAccountName))" -PercentComplete (($counter / $totalUsers) * 100)
     }
 
     if (Is-UserInExcludedOU $user.DistinguishedName) {
@@ -418,7 +418,7 @@ foreach ($user in $users) {
     $result += $obj
 }
 
-Write-Progress -Activity "Processing AD Accounts" -Completed
+Write-Progress -Activity "Processando Contas do AD" -Completed
 
 # ==============================================================================
 # SUMMARY & OUTPUT BUILD
@@ -440,12 +440,12 @@ $outputData = @{
 }
 
 Write-Host "----------------------------------------------------------------" -ForegroundColor Gray
-Write-Host "Collection Summary:" -ForegroundColor Green
-Write-Host "  Total Processed Users : $($summary.TotalUsers)"
-Write-Host "  Active Users          : $($summary.ActiveUsers)"
-Write-Host "  Inactive Users        : $($summary.InactiveUsers)"
-Write-Host "  Privileged Users      : $($summary.PrivilegedUsers)"
-Write-Host "  Non-Compliant Accounts: $($summary.NonCompliant)"
+Write-Host "Resumo da Coleta:" -ForegroundColor Green
+Write-Host "  Total de Usuários Processados : $($summary.TotalUsers)"
+Write-Host "  Usuários Ativos               : $($summary.ActiveUsers)"
+Write-Host "  Usuários Inativos             : $($summary.InactiveUsers)"
+Write-Host "  Usuários Privilegiados        : $($summary.PrivilegedUsers)"
+Write-Host "  Contas Não-Conformes          : $($summary.NonCompliant)"
 Write-Host "----------------------------------------------------------------" -ForegroundColor Gray
 
 # Convert to JSON
@@ -455,10 +455,10 @@ $jsonPayload = $outputData | ConvertTo-Json -Depth 6
 if (-not [string]::IsNullOrWhiteSpace($CONFIG.OutputFile)) {
     try {
         $jsonPayload | Out-File -FilePath $CONFIG.OutputFile -Encoding utf8 -Force
-        Write-Host "[+] Local JSON report saved to: $($CONFIG.OutputFile)" -ForegroundColor Green
+        Write-Host "[+] Relatório JSON local salvo em: $($CONFIG.OutputFile)" -ForegroundColor Green
     }
     catch {
-        Write-Error "Failed to save local JSON file to '$($CONFIG.OutputFile)': $_"
+        Write-Error "Falha ao salvar relatório JSON local em '$($CONFIG.OutputFile)': $_"
     }
 }
 
@@ -467,7 +467,7 @@ if (-not [string]::IsNullOrWhiteSpace($CONFIG.OutputFile)) {
 # ==============================================================================
 
 if (-not [string]::IsNullOrWhiteSpace($CONFIG.ApiUrl)) {
-    Write-Host "[+] Sending data payload to API: $($CONFIG.ApiUrl)" -ForegroundColor Cyan
+    Write-Host "[+] Enviando carga de dados para a API: $($CONFIG.ApiUrl)" -ForegroundColor Cyan
     try {
         $headers = @{
             "Content-Type" = "application/json; charset=utf-8"
@@ -477,11 +477,11 @@ if (-not [string]::IsNullOrWhiteSpace($CONFIG.ApiUrl)) {
         }
 
         $response = Invoke-RestMethod -Uri $CONFIG.ApiUrl -Method Post -Body $jsonPayload -Headers $headers -ContentType "application/json; charset=utf-8"
-        Write-Host "[✔] API Response: $($response.message)" -ForegroundColor Green
+        Write-Host "[✔] Resposta da API: $($response.message)" -ForegroundColor Green
     }
     catch {
-        Write-Warning "Failed to post data to API '$($CONFIG.ApiUrl)': $_"
+        Write-Error "Falha ao enviar dados para a API do AD Report Hub em '$($CONFIG.ApiUrl)': $_"
     }
 }
 
-Write-Host "[✔] Collection complete." -ForegroundColor Green
+Write-Host "[✔] Coleta concluída." -ForegroundColor Green
