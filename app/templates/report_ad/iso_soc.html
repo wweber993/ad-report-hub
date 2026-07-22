@@ -292,7 +292,7 @@ function renderControls() {
   }
 
   container.innerHTML = filtered.map(c => `
-    <div class="isoc-control-card glass-card p-4 mb-3" onclick='openViolationModal(${JSON.stringify(c)})' style="cursor:pointer;">
+    <div class="isoc-control-card glass-card p-4 mb-3" onclick="openViolationModal('${c.id}')" style="cursor:pointer;">
       <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
         <div class="flex-grow-1" style="min-width:0;">
           <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
@@ -377,15 +377,21 @@ function updateChart() {
 }
 
 /* ── Violation Modal ────────────────────────────────────────────── */
-function openViolationModal(control) {
-  document.getElementById('vmFrameworkBadge').textContent = control.framework;
+function openViolationModal(controlInput) {
+  const control = typeof controlInput === 'string' 
+    ? allControls.find(c => c.id === controlInput) 
+    : controlInput;
+
+  if (!control) return;
+
+  document.getElementById('vmFrameworkBadge').textContent = control.framework || '';
   document.getElementById('vmFrameworkBadge').className =
     'isoc-badge-framework ' + (control.framework === 'ISO 27001' ? 'iso' : control.framework === 'SOC 2' ? 'soc' : 'cis');
-  document.getElementById('vmControlId').textContent    = control.id + ' — ' + control.domain;
-  document.getElementById('vmTitle').textContent        = control.title;
-  document.getElementById('vmDescription').textContent  = control.description;
-  document.getElementById('vmRecommendation').textContent = control.recommendation;
-  document.getElementById('vmCount').textContent        = control.count;
+  document.getElementById('vmControlId').textContent    = (control.id || '') + ' — ' + (control.domain || '');
+  document.getElementById('vmTitle').textContent        = control.title || '';
+  document.getElementById('vmDescription').textContent  = control.description || '';
+  document.getElementById('vmRecommendation').textContent = control.recommendation || '';
+  document.getElementById('vmCount').textContent        = control.count || 0;
 
   const list = document.getElementById('vmUsersList');
   const noV  = document.getElementById('vmNoViolations');
