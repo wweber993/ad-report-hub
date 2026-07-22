@@ -14,6 +14,9 @@
 
 {% block topbar_actions %}
 <div class="d-flex align-items-center gap-2">
+  <select class="form-select form-select-sm" id="envFilter" style="background:#0d111d;color:#f8fafc;border:1px solid rgba(255,255,255,0.15);border-radius:10px;min-width:165px;">
+    <option value="" style="background:#0d111d;color:#f8fafc;">Todos os Ambientes</option>
+  </select>
   <div id="lastUpdated" class="text-secondary small"></div>
 </div>
 {% endblock %}
@@ -165,14 +168,34 @@ document.addEventListener('DOMContentLoaded', () => {
       updateChart();
     });
   });
+
+  document.getElementById('envFilter')?.addEventListener('change', e => {
+    selectedEnv = e.target.value;
+    loadData();
+  });
 });
+
+let selectedEnv = '';
+
+function populateEnvFilter(envs) {
+  const sel = document.getElementById('envFilter');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="" style="background:#0d111d;color:#f8fafc;">Todos os Ambientes</option>' +
+    (envs || []).map(e => `<option value="${e}" ${e === cur ? 'selected' : ''} style="background:#0d111d;color:#f8fafc;">${e}</option>`).join('');
+  if (cur) sel.value = cur;
+}
 
 /* ── Data fetch ─────────────────────────────────────────────────── */
 function loadData() {
-  fetch('/ad/api/iso-soc')
+  const params = new URLSearchParams();
+  if (selectedEnv) params.append('env', selectedEnv);
+
+  fetch(`/ad/api/iso-soc?${params}`)
     .then(r => r.json())
     .then(data => {
       allControls = data.controls || [];
+      populateEnvFilter(data.environments);
       renderSummary(data.summary, data.totalUsers);
       renderTopViolations();
       renderControls();

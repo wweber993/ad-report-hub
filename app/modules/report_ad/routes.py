@@ -189,8 +189,13 @@ def iso_soc():
 @module_required('report_ad')
 def api_iso_soc():
     data_dir, overrides_path = _paths()
-    users = _load_users_cached(data_dir, overrides_path)
-    return jsonify(calculate_iso_soc_compliance(users))
+    all_users = _load_users_cached(data_dir, overrides_path)
+    env = request.args.get("env")
+    users = [u for u in all_users if u.get("Environment") == env] if env else all_users
+    envs = sorted({u.get("Environment") for u in all_users if u.get("Environment")})
+    res = calculate_iso_soc_compliance(users)
+    res["environments"] = envs
+    return jsonify(res)
 
 
 # ── History page ───────────────────────────────────────────────────────

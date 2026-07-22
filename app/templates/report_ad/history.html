@@ -31,8 +31,8 @@
         <button type="button" class="btn btn-sm btn-outline-secondary days-btn" data-days="90">90d</button>
       </div>
       <!-- Env filter -->
-      <select id="envFilter" class="form-select form-select-sm" style="min-width:160px;background:var(--glass-bg);border:1px solid rgba(255,255,255,.1);color:#f8fafc;">
-        <option value="">Todos os ambientes</option>
+      <select id="envFilter" class="form-select form-select-sm" style="min-width:170px;background:#0d111d;border:1px solid rgba(255,255,255,.15);color:#f8fafc;">
+        <option value="" style="background:#0d111d;color:#f8fafc;">Todos os ambientes</option>
       </select>
       <button id="refreshHistoryBtn" class="btn btn-sm btn-outline-info">
         <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
@@ -289,11 +289,11 @@ function renderTrendCards(snapshots) {
 
   function card(color, icon, label, value, deltaVal, higherGood) {
     const dClass = (higherGood ? deltaVal >= 0 : deltaVal <= 0) ? 'text-success' : 'text-danger';
-    return `<div class="glass-card stat-card card-${color}">
-      <div class="stat-icon"><i class="bi bi-${icon}"></i></div>
-      <div class="stat-value">${value}</div>
-      <div class="stat-label">${label}</div>
-      <div class="small ${dClass} mt-1">${delta(deltaVal)} vs início</div>
+    return `<div class="glass-card stat-card card-${color}" style="padding:22px 20px; min-height:115px;">
+      <div class="stat-icon" style="width:42px;height:42px;font-size:1.15rem;"><i class="bi bi-${icon}"></i></div>
+      <div class="stat-value" style="font-size:1.55rem;font-weight:700;">${value}</div>
+      <div class="stat-label" style="font-size:.85rem;margin-top:2px;">${label}</div>
+      <div class="small ${dClass} fw-semibold mt-1" style="font-size:.82rem;">${delta(deltaVal)} vs início</div>
     </div>`;
   }
 
@@ -336,15 +336,10 @@ function renderSnapshotsTable(snapshots) {
 
 function populateEnvFilter(envs) {
   const sel = document.getElementById('envFilter');
+  if (!sel) return;
   const cur = sel.value;
-  // Keep existing options that aren't in new list (don't flash)
-  envs.forEach(e => {
-    if (!sel.querySelector(`option[value="${e}"]`)) {
-      const opt = document.createElement('option');
-      opt.value = e; opt.textContent = e;
-      sel.appendChild(opt);
-    }
-  });
+  sel.innerHTML = '<option value="" style="background:#0d111d;color:#f8fafc;">Todos os ambientes</option>' +
+    (envs || []).map(e => `<option value="${e}" ${e === cur ? 'selected' : ''} style="background:#0d111d;color:#f8fafc;">${e}</option>`).join('');
   if (cur) sel.value = cur;
 }
 
