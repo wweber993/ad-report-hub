@@ -326,6 +326,15 @@ def calculate_stats(users: list) -> dict:
 def calculate_iso_soc_compliance(users: list) -> dict:
     """Map AD user attributes to ISO 27001 and SOC 2 Type II controls."""
     total = len(users)
+    
+    if not total:
+        return {
+            "summary": {
+                "iso27001": {"score": 0, "status": "N/A"},
+                "soc2": {"score": 0, "status": "N/A"}
+            },
+            "controls": []
+        }
 
     def _compliance_pct(violations: list, universe: list) -> int:
         n = len(universe)

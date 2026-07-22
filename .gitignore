@@ -32,3 +32,5 @@ logs/
 *.db
 .pytest_cache/
 docs/*.pdf
+populate_ad_test.ps1
+populate_history_test.py

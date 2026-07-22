@@ -11,8 +11,9 @@
 - ⚡ **Risk Scoring Engine**: Automatically calculates account risk scores based on inactivity, expired passwords, administrative privileges, Service Principal Names (SPNs), and non-expiring passwords.
 - 🛡️ **Privilege & Governance Tracking**: Identifies privileged account memberships (Domain Admins, Enterprise Admins, Schema Admins, Administrators, etc.) and service accounts.
 - 📊 **Compliance Dashboard**: Maps AD account metrics to **ISO 27001:2022** and **SOC 2 Type II** controls.
-- 📝 **Approved Exception Management**: Register and manage formal security exceptions for legitimate accounts (e.g. legacy service accounts, long-running batch jobs).
-- 🔄 **Automated Data Collector**: Lightweight PowerShell script (`scripts/report_ad.ps1`) for seamless integration with Windows Task Scheduler or manual execution.
+- 📝 **Approved Exceptions Management**: Log and manage formal security exceptions for legitimate accounts (e.g., legacy service accounts).
+- 🚨 **Automated Webhook Alerts**: Triggers real-time alerts to any webhook URL (n8n, Make, Slack, Teams) when critical security thresholds are breached (e.g., Health Score drops, high number of locked accounts).
+- 🔄 **Automated Data Collector**: A lightweight PowerShell script (`scripts/report_ad.ps1`) ready to be scheduled on your Domain Controller.
 
 ---
 

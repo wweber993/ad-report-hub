@@ -12,8 +12,9 @@ O **AD Report Hub** é uma plataforma de código aberto voltada à comunidade, p
 - ⚡ **Motor de Pontuação de Riscos (Risk Scoring)**: Calcula automaticamente a pontuação de risco das contas com base em inatividade, senhas expiradas, privilégios administrativos, SPNs (Service Principal Names) e senhas que nunca expiram.
 - 🛡️ **Governança e Rastreamento de Privilégios**: Identifica associações a grupos privilegiados (Domain Admins, Enterprise Admins, Schema Admins, etc.) e contas de serviço.
 - 📊 **Painel de Conformidade (Compliance)**: Mapeia as métricas do AD para os controles da **ISO 27001:2022** e **SOC 2 Type II**.
-- 📝 **Gestão de Exceções Aprovadas**: Registre e gerencie exceções formais de segurança para contas legítimas (ex.: contas de serviço antigas, processos em lote).
-- 🔄 **Coletor de Dados Automatizado**: Um script PowerShell leve (`scripts/report_ad.ps1`) configurado para integração simples com o Agendador de Tarefas do Windows ou execução manual.
+- 📝 **Gestão de Exceções Aprovadas**: Registre e gerencie exceções formais de segurança para contas legítimas (ex.: contas de serviço antigas).
+- 🚨 **Alertas Automáticos via Webhook**: Dispara alertas em tempo real para qualquer URL (n8n, Make, Slack, Teams) quando os limites de segurança são violados (ex.: Queda drástica no Health Score, excesso de bloqueios).
+- 🔄 **Coletor de Dados Automatizado**: Um script PowerShell leve (`scripts/report_ad.ps1`) configurado para integração simples com o Agendador de Tarefas do Windows.
 
 ---
 
