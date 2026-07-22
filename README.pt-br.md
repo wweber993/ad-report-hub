@@ -57,7 +57,7 @@ sudo apt install python3 python3-venv python3-pip git -y
 
 # 2. Clonar repositório para /opt
 cd /opt
-sudo git clone https://github.com/wweber993/ad-report-hub.git report-hub
+git clone https://github.com/wweber993/report-ad-hub.git report-hub
 sudo chown -R $USER:$USER /opt/report-hub
 cd report-hub
 
