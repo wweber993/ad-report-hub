@@ -32,29 +32,29 @@ param (
 $CONFIG = @{
     # EN: Target domain/environment label (e.g., "Production", "Headquarters")
     # PT: Rótulo do domínio/ambiente alvo (ex: "Produção", "Matriz")
-    Environment = "Production"
+    Environment        = "Production"
 
     # EN: Single Distinguished Name (DN) OU base to search users from.
     # EN: Leave empty to search the entire domain.
     # PT: Unidade Organizacional (OU/DN) única base para buscar usuários.
     # PT: Deixe vazio para buscar em todo o domínio.
-    SearchBase = ""
+    SearchBase         = ""
 
     # EN: Array of OU Distinguished Names to query multiple OUs.
     # PT: Lista (Array) de Unidades Organizacionais (DN) para consultar múltiplas OUs.
-    SearchBases = @()
+    SearchBases        = @()
 
     # EN: Optional Distinguished Name (DN) to query privileged accounts domain-wide.
     # PT: Distinguished Name (DN) opcional para consultar contas privilegiadas em todo o domínio.
-    SearchPrivilege = ""
+    SearchPrivilege    = ""
 
     # EN: Array of OU Distinguished Names to exclude from user collection.
     # PT: Lista (Array) de OUs (DN) para excluir da coleta de usuários.
-    ExcludedOUs = @()
+    ExcludedOUs        = @()
 
     # EN: Threshold in days to flag accounts as inactive based on last logon.
     # PT: Limite de dias sem logon para marcar uma conta como inativa.
-    InactiveDays = 60
+    InactiveDays       = 60
 
     # EN: Fallback password max age in days if domain password policy is unreachable.
     # PT: Idade máxima da senha (em dias) caso a política de senha do domínio seja inacessível.
@@ -62,19 +62,19 @@ $CONFIG = @{
 
     # EN: Auto-discover Domain Controllers dynamically. If $false, fill DomainControllers array.
     # PT: Descobrir Controladores de Domínio automaticamente. Se $false, preencha o array DomainControllers.
-    UseAutoDC = $true
-    DomainControllers = @()
+    UseAutoDC          = $true
+    DomainControllers  = @()
 
     # EN: AD Report Hub API settings
     # PT: Configurações de API do AD Report Hub
-    ApiUrl = "http://localhost:8090/ad/api/ingest"
-    ApiToken = "your_secret_ingest_token_here"
+    ApiUrl             = "http://192.168.10.122:8090/ad/api/ingest"
+    ApiToken           = "U5I=Osq5TAW(L5D+"
 
     # EN: Optional file path to save the generated report JSON locally (e.g., "C:\Reports\ad_report.json").
     # EN: Leave empty to not save locally.
     # PT: Caminho opcional do arquivo para salvar o relatório JSON localmente (ex: "C:\Reports\ad_report.json").
     # PT: Deixe vazio para não salvar localmente.
-    OutputFile = ""
+    OutputFile         = ""
 }
 
 # ==============================================================================
@@ -183,8 +183,8 @@ function Get-UserOUPath {
     param ([string]$dn)
 
     $ous = ($dn -split ',') |
-        Where-Object { $_ -like 'OU=*' } |
-        ForEach-Object { $_ -replace '^OU=' }
+    Where-Object { $_ -like 'OU=*' } |
+    ForEach-Object { $_ -replace '^OU=' }
 
     [array]::Reverse($ous)
     return ($ous -join '/')
