@@ -305,12 +305,21 @@ def calculate_stats(users: list) -> dict:
                 pass
 
     depts: dict = {}
-    for u in [x for x in users if not x.get("isCompliant")]:
-        d = u.get("DisplayDepartment") or u.get("Department", "Não Definido")
+    for u in [x for x in users if not x.get("isCompliant") or (x.get("riskScore") or 0) > 0]:
+        disp = u.get("DisplayDepartment")
+        dept = u.get("Department")
+        if not disp or disp in ("Não Definido", "Raiz"):
+            d = dept if dept and dept not in ("Não Definido", "Raiz") else "Não Definido"
+        else:
+            d = disp
         depts[d] = depts.get(d, 0) + 1
+
     top_depts = sorted(depts.items(), key=lambda x: x[1], reverse=True)[:5]
 
     envs = sorted({u.get("Environment") for u in users if u.get("Environment")})
+
+    avg_risk = (sum(u.get("riskScore", 0) for u in users) / len(users)) if users else 0
+    calculated_health = max(0, min(100, round(100 - avg_risk)))
 
     return {
         "total":          len(users),
@@ -321,8 +330,8 @@ def calculate_stats(users: list) -> dict:
         "nonCompliant":   len(users) - len(compliant),
         "privileged":     len(privileged),
         "privilegedGroups": PRIVILEGED_GROUPS,
-        "healthScore":    round(len(compliant) / len(users) * 100) if users else 0,
-        "highRiskUsers":  sum(1 for u in users if (u.get("riskScore") or 0) >= 50),
+        "healthScore":    calculated_health,
+        "highRiskUsers":  sum(1 for u in users if (u.get("riskScore") or 0) >= 40),
         "healthInsights": insights or ["Nenhum incidente crítico detectado."],
         "environments":   envs,
         "topDepartments": [{"name": k, "count": v} for k, v in top_depts],
