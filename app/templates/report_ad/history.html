@@ -289,11 +289,15 @@ function renderTrendCards(snapshots) {
 
   function card(color, icon, label, value, deltaVal, higherGood) {
     const dClass = (higherGood ? deltaVal >= 0 : deltaVal <= 0) ? 'text-success' : 'text-danger';
-    return `<div class="glass-card stat-card card-${color}" style="padding:22px 20px; min-height:115px;">
-      <div class="stat-icon" style="width:42px;height:42px;font-size:1.15rem;"><i class="bi bi-${icon}"></i></div>
-      <div class="stat-value" style="font-size:1.55rem;font-weight:700;">${value}</div>
-      <div class="stat-label" style="font-size:.85rem;margin-top:2px;">${label}</div>
-      <div class="small ${dClass} fw-semibold mt-1" style="font-size:.82rem;">${delta(deltaVal)} vs início</div>
+    return `<div class="glass-card stat-card card-${color}" style="flex-direction:column; align-items:flex-start; justify-content:space-between; gap:10px; padding:18px 20px; min-height:125px; overflow:hidden;">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="stat-icon" style="width:38px;height:38px;font-size:1.1rem;"><i class="bi bi-${icon}"></i></div>
+        <span class="badge ${dClass} bg-opacity-10 fw-semibold" style="font-size:.78rem; padding:5px 8px;">${delta(deltaVal)} vs início</span>
+      </div>
+      <div>
+        <div class="stat-value" style="font-size:1.65rem; font-weight:700; line-height:1.1; color:#f8fafc;">${value}</div>
+        <div class="stat-label text-secondary" style="font-size:.8rem; margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">${label}</div>
+      </div>
     </div>`;
   }
 
