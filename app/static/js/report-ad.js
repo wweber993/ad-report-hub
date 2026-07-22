@@ -11,6 +11,7 @@ let currentFilters = {
     privileged: false,
     compliant: false,
     nonCompliant: false,
+    highRisk: false,
     lockedOut: false,
     neverExpires: false,
     disabled: false,
@@ -103,7 +104,7 @@ function renderSummaryCards() {
     const c = stats.creationStats || { '7d': 0, '30d': 0, '60d': 0 };
 
     const cards = [
-        { label: 'Usuários em Risco', value: stats.highRiskUsers,  icon: 'shield-alert',   color: 'danger',  filter: 'nonCompliant' },
+        { label: 'Usuários em Risco', value: stats.highRiskUsers,  icon: 'shield-alert',   color: 'danger',  filter: 'highRisk' },
         { label: 'Não Conformes',     value: stats.nonCompliant,   icon: 'alert-triangle', color: 'warning', filter: 'nonCompliant' },
         { label: 'Privilegiados',     value: stats.privileged,     icon: 'shield-check',   color: 'primary',  filter: 'privileged' },
         { label: 'Bloqueados',        value: stats.lockedOut,      icon: 'lock',           color: 'danger',  filter: 'lockedOut' },
@@ -195,9 +196,11 @@ function applyFiltersAndSearch() {
         
         let matchesStatus = true;
         const isComp = user.isCompliant ?? user.ComplianceStatus ?? true;
+        const rScore = user.riskScore ?? user.RiskScore ?? 0;
         if (currentFilters.privileged && !user.isPrivileged) matchesStatus = false;
         if (currentFilters.nonCompliant && isComp) matchesStatus = false;
         if (currentFilters.compliant && !isComp) matchesStatus = false;
+        if (currentFilters.highRisk && rScore < 40) matchesStatus = false;
         if (currentFilters.lockedOut && !user.LockedOut) matchesStatus = false;
         if (currentFilters.neverExpires && !user.PasswordNeverExpires) matchesStatus = false;
         if (currentFilters.disabled && user.Enabled) matchesStatus = false;
@@ -582,8 +585,12 @@ function getRiskLevel(score) {
 }
 
 function setFilter(type) {
-    currentFilters = { all: false, privileged: false, compliant: false, nonCompliant: false, lockedOut: false, neverExpires: false, disabled: false, inactive90: false };
-    currentFilters[type] = true;
+    currentFilters = { all: false, privileged: false, compliant: false, nonCompliant: false, highRisk: false, lockedOut: false, neverExpires: false, disabled: false, inactive90: false };
+    if (type !== 'all') {
+        currentFilters[type] = true;
+    } else {
+        currentFilters.all = true;
+    }
     applyFiltersAndSearch();
 }
 

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Histórico & Tendência — AD Report Hub{% endblock %}
 
-{% block head %}
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/report-ad.css') }}?v=4">
 {% endblock %}
 
 {% block breadcrumb %}
@@ -160,6 +160,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
 <script>
 let selectedDays = 30;
 let selectedEnv = '';
