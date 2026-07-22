@@ -24,7 +24,6 @@ function _csrfToken() {
 const userListBody = document.getElementById('userListBody');
 const searchInput = document.getElementById('userSearch');
 const refreshBtn = document.getElementById('refreshBtn');
-const exportBtn = document.getElementById('exportBtn');
 const envFilter = document.getElementById('envFilter');
 
 // Charts
@@ -650,12 +649,9 @@ function applySort() {
     });
 }
 
-// Event Listeners
 searchInput.addEventListener('input', applyFiltersAndSearch);
 envFilter.addEventListener('change', applyFiltersAndSearch);
 document.getElementById('tableSearch')?.addEventListener('input', applyFiltersAndSearch);
-refreshBtn.addEventListener('click', fetchData);
-exportBtn.addEventListener('click', exportToCSV);
 document.getElementById('closeDetailsBtn').addEventListener('click', () => {
     document.getElementById('userDetailsModal').style.display = 'none';
 });
