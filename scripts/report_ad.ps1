@@ -1,106 +1,40 @@
-<#
-.SYNOPSIS
-    AD Report Hub — Active Directory Security & Compliance Collector
-
-.DESCRIPTION
-    Collects user account metrics, inactivity data, password policies, privileged group memberships,
-    and security risk indicators from Active Directory domains. The data can be exported to a local
-    JSON report file or posted directly to the AD Report Hub API endpoint.
-
-    To configure the script, simply edit the $CONFIG variables below.
-
-.EXAMPLE
-    # Run the collector manually
-    .\report_ad.ps1
-
-.EXAMPLE
-    # Install as a scheduled task to run automatically every day at 02:00 AM
-    .\report_ad.ps1 -InstallTask
-#>
-
-[CmdletBinding()]
-param (
-    [switch]$InstallTask,
-    [string]$TaskTime = "02:00"
-)
-
 # ==============================================================================
 # CONFIGURATION
 # Edit these values to match your environment before running or scheduling.
 # ==============================================================================
 
 $CONFIG = @{
-    # EN: Target domain/environment label (e.g., "Production", "Headquarters")
-    # PT: Rótulo do domínio/ambiente alvo (ex: "Produção", "Matriz")
-    Environment        = "Production"
+    # Defini um nome claro para o ambiente de testes
+    Environment = "Lab_Corp"
 
-    # EN: Single Distinguished Name (DN) OU base to search users from.
-    # EN: Leave empty to search the entire domain.
-    # PT: Unidade Organizacional (OU/DN) única base para buscar usuários.
-    # PT: Deixe vazio para buscar em todo o domínio.
-    SearchBase         = ""
+    # Aponta a busca principal APENAS para a OU de laboratório que criamos
+    SearchBase = "OU=Corp_Lab,DC=williamweber,DC=com,DC=br"
 
-    # EN: Array of OU Distinguished Names to query multiple OUs.
-    # PT: Lista (Array) de Unidades Organizacionais (DN) para consultar múltiplas OUs.
-    SearchBases        = @()
+    # Deixamos vazio, pois já estamos usando o SearchBase acima
+    SearchBases = @()
 
-    # EN: Optional Distinguished Name (DN) to query privileged accounts domain-wide.
-    # PT: Distinguished Name (DN) opcional para consultar contas privilegiadas em todo o domínio.
-    SearchPrivilege    = ""
+    # Apontamos para a raiz do domínio para que ele consiga ler o grupo "Domain Admins"
+    # e encontrar aquele "admin.oculto" que colocamos lá no script anterior.
+    SearchPrivilege = "DC=williamweber,DC=com,DC=br"
 
-    # EN: Array of OU Distinguished Names to exclude from user collection.
-    # PT: Lista (Array) de OUs (DN) para excluir da coleta de usuários.
-    ExcludedOUs        = @()
+    # Sem exclusões necessárias para este laboratório
+    ExcludedOUs = @()
 
-    # EN: Threshold in days to flag accounts as inactive based on last logon.
-    # PT: Limite de dias sem logon para marcar uma conta como inativa.
-    InactiveDays       = 60
-
-    # EN: Fallback password max age in days if domain password policy is unreachable.
-    # PT: Idade máxima da senha (em dias) caso a política de senha do domínio seja inacessível.
+    InactiveDays = 60
     PasswordMaxAgeDays = 60
 
-    # EN: Auto-discover Domain Controllers dynamically. If $false, fill DomainControllers array.
-    # PT: Descobrir Controladores de Domínio automaticamente. Se $false, preencha o array DomainControllers.
-    UseAutoDC          = $true
-    DomainControllers  = @()
+    UseAutoDC = $true
+    DomainControllers = @()
 
-    # EN: AD Report Hub API settings
-    # PT: Configurações de API do AD Report Hub
-    ApiUrl             = "http://192.168.10.122:8090/ad/api/ingest"
-    ApiToken           = "U5I=Osq5TAW(L5D+"
+    # O IP e porta do seu AD Report Hub (ajuste se o IP da máquina for outro)
+    ApiUrl = "http://192.168.10.122:8090/ad/api/ingest"
+    ApiToken = "U5I=Osq5TAW(L5D+"
 
-    # EN: Optional file path to save the generated report JSON locally (e.g., "C:\Reports\ad_report.json").
-    # EN: Leave empty to not save locally.
-    # PT: Caminho opcional do arquivo para salvar o relatório JSON localmente (ex: "C:\Reports\ad_report.json").
-    # PT: Deixe vazio para não salvar localmente.
-    OutputFile         = ""
+    # Adicionei um caminho local para você poder ver o arquivo gerado e validar 
+    # os dados antes mesmo de olhar no dashboard da API.
+    OutputFile = "C:\ADReportHub_Resultado_Lab.json"
 }
 
-# ==============================================================================
-# SCHEDULED TASK INSTALLATION
-# ==============================================================================
-
-if ($InstallTask) {
-    $TaskName = "ADReportHub_Collector"
-    $ScriptPath = $PSCommandPath
-
-    Write-Host "[+] Criando Tarefa Agendada '$TaskName' para rodar diariamente as $TaskTime..." -ForegroundColor Cyan
-
-    try {
-        $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -File `"$ScriptPath`""
-        $trigger = New-ScheduledTaskTrigger -Daily -At $TaskTime
-        $principal = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount -RunLevel Highest
-
-        Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
-        
-        Write-Host "[✔] Tarefa Agendada '$TaskName' registrada com sucesso para rodar as $TaskTime!" -ForegroundColor Green
-    }
-    catch {
-        Write-Error "Falha ao criar tarefa agendada: $_"
-    }
-    exit
-}
 
 # ==============================================================================
 # PREREQUISITES & MODULE VERIFICATION
@@ -182,12 +116,20 @@ catch {
 function Get-UserOUPath {
     param ([string]$dn)
 
-    $ous = ($dn -split ',') |
-    Where-Object { $_ -like 'OU=*' } |
-    ForEach-Object { $_ -replace '^OU=' }
+    # O @() força o resultado a ser um Array, mesmo que seja vazio
+    $ous = @(
+        ($dn -split ',') |
+        Where-Object { $_ -like 'OU=*' } |
+        ForEach-Object { $_ -replace '^OU=' }
+    )
 
-    [array]::Reverse($ous)
-    return ($ous -join '/')
+    if ($ous.Count -gt 0) {
+        [array]::Reverse($ous)
+        return ($ous -join '/')
+    }
+    
+    # Se não houver OU (ex: CN=Users), retorna um valor padrão
+    return "Builtin/Containers"
 }
 
 function Get-TrueLastLogon {
