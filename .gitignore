@@ -34,3 +34,4 @@ logs/
 docs/*.pdf
 populate_ad_test.ps1
 populate_history_test.py
+mock_history.sh
