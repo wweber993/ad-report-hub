@@ -87,6 +87,13 @@ python create_admin.py
 
 ### 2. Run Web Application (Systemd + Gunicorn)
 
+To keep the application running in the background, you can set up a Systemd service.
+Create a file at `/etc/systemd/system/report-hub.service`:
+
+```bash
+sudo nano /etc/systemd/system/report-hub.service
+```
+
 ```ini
 [Unit]
 Description=AD Report Hub Daemon

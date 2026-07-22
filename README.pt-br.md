@@ -81,6 +81,10 @@ python create_admin.py
 Para manter a aplicação rodando em segundo plano, você pode configurar um serviço Systemd.
 Crie um arquivo em `/etc/systemd/system/report-hub.service`:
 
+```bash
+sudo nano /etc/systemd/system/report-hub.service
+```
+
 ```ini
 [Unit]
 Description=AD Report Hub Daemon
