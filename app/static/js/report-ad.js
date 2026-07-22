@@ -7,10 +7,10 @@ let createdDaysFilter = null;
 let currentPage = 0;
 const PAGE_SIZE = 50;
 let currentFilters = {
-    all: true,
+    all: false,
     privileged: false,
     compliant: false,
-    nonCompliant: false,
+    nonCompliant: true,
     lockedOut: false,
     neverExpires: false,
     disabled: false,
@@ -103,14 +103,10 @@ function renderSummaryCards() {
     const c = stats.creationStats || { '7d': 0, '30d': 0, '60d': 0 };
 
     const cards = [
-        { label: 'Total Usuários',    value: stats.total,          icon: 'users',          color: 'primary', filter: 'all' },
-        { label: 'Usuários Ativos',   value: stats.active,         icon: 'user-check',     color: 'success', filter: 'compliant' },
-        { label: 'Desativados',       value: stats.inactive,       icon: 'user-x',         color: 'muted',   filter: 'disabled' },
-        { label: 'Bloqueados',        value: stats.lockedOut,      icon: 'lock',           color: 'danger',  filter: 'lockedOut' },
-        { label: 'Privilegiados',     value: stats.privileged,     icon: 'shield-check',   color: 'danger',  filter: 'privileged' },
+        { label: 'Usuários em Risco', value: stats.highRiskUsers,  icon: 'shield-alert',   color: 'danger',  filter: 'nonCompliant' },
         { label: 'Não Conformes',     value: stats.nonCompliant,   icon: 'alert-triangle', color: 'warning', filter: 'nonCompliant' },
-        { label: 'Usuários em Risco', value: stats.highRiskUsers,  icon: 'shield-alert',   color: 'danger' },
-        { label: 'Novos (30 dias)',    value: c['30d'],             icon: 'calendar-plus',  color: 'primary', filterDays: 30 },
+        { label: 'Privilegiados',     value: stats.privileged,     icon: 'shield-check',   color: 'primary',  filter: 'privileged' },
+        { label: 'Bloqueados',        value: stats.lockedOut,      icon: 'lock',           color: 'danger',  filter: 'lockedOut' },
     ];
 
     container.innerHTML = cards.map(card => {
@@ -300,6 +296,20 @@ function renderTable() {
                 <span class="badge ${user.Enabled ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${user.Enabled ? 'text-success' : 'text-danger'}">
                     ${user.Enabled ? 'Ativo' : 'Inativo'}
                 </span>
+            </td>
+            <td>
+                ${ (() => {
+                    const privilegedGroupsLower = (stats.privilegedGroups || []).map(pg => pg.toLowerCase());
+                    const privGroups = (user.Groups || []).filter(g => privilegedGroupsLower.includes(g.toLowerCase()));
+                    if (privGroups.length === 0) return '<span class="text-muted small">-</span>';
+                    const visible = privGroups.slice(0, 2);
+                    const hidden = privGroups.slice(2);
+                    let html = visible.map(g => `<span class="badge bg-danger bg-opacity-10 text-danger" style="margin-right:4px">${g}</span>`).join('');
+                    if (hidden.length > 0) {
+                        html += `<span class="badge bg-secondary bg-opacity-10 text-secondary" title="${hidden.join(', ')}">+${hidden.length}</span>`;
+                    }
+                    return html;
+                })() }
             </td>
             <td>
                 <span class="risk-badge risk-${getRiskLevel(user.riskScore)}">${user.riskScore}%</span>

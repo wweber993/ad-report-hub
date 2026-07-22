@@ -8,9 +8,9 @@
 /* ── CSS Variables ─────────────────────────────────────────────── */
 :root {
   /* Backgrounds */
-  --bg-primary:    #050811;
-  --bg-secondary:  #0d111d;
-  --bg-card:       rgba(13, 17, 29, 0.85);
+  --bg-primary:    #0b1120;
+  --bg-secondary:  #0f172a;
+  --bg-card:       rgba(15, 23, 42, 0.85);
   --bg-hover:      rgba(255, 255, 255, 0.04);
   --bg-active:     rgba(56, 189, 248, 0.08);
 
@@ -29,10 +29,10 @@
   /* Semantic */
   --green:         #10b981;
   --green-dim:     rgba(16, 185, 129, 0.12);
-  --red:           #f43f5e;
-  --red-dim:       rgba(244, 63, 94, 0.12);
-  --yellow:        #fbbf24;
-  --yellow-dim:    rgba(251, 191, 36, 0.12);
+  --red:           #e11d48;
+  --red-dim:       rgba(225, 29, 72, 0.12);
+  --yellow:        #f59e0b;
+  --yellow-dim:    rgba(245, 158, 11, 0.12);
   --orange:        #f59e0b;
 
   /* Text */

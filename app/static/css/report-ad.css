@@ -21,17 +21,17 @@
 }
 
 :root {
-    --bg-color: #050811;
-    --surface-color: #0d111d;
-    --card-bg: rgba(13, 17, 29, 0.7);
+    --bg-color: #0b1120;
+    --surface-color: #0f172a;
+    --card-bg: rgba(15, 23, 42, 0.7);
     --card-border: rgba(255, 255, 255, 0.08);
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --accent-primary: #38bdf8;
     --accent-secondary: #818cf8;
     --success: #10b981;
-    --warning: #fbbf24;
-    --danger: #f43f5e;
+    --warning: #f59e0b;
+    --danger: #e11d48;
     --info: #0ea5e9;
     --glass-effect: blur(16px);
 }
