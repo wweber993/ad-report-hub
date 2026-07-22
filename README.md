@@ -1,7 +1,5 @@
 # AD Report Hub 🛡️
 
-*🌎 Leia em outros idiomas: [Inglês (English)](README.md), [Português](README.pt-br.md).*
-
 O **AD Report Hub** é uma plataforma de código aberto voltada à comunidade, projetada para simplificar o monitoramento de segurança, governança de privilégios, pontuação de riscos e acompanhamento de conformidade (ISO 27001 & SOC 2 Type II) do Active Directory.
 
 ---
