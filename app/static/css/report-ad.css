@@ -21,19 +21,19 @@
 }
 
 :root {
-    --bg-color: #111111;
-    --surface-color: #1b1b1c;
-    --card-bg: #252526;
-    --card-border: #333333;
-    --text-primary: #ffffff;
-    --text-secondary: #cccccc;
-    --accent-primary: #50e6ff;
-    --accent-secondary: #b4a0ff;
-    --success: #6ce26c;
-    --warning: #fce100;
-    --danger: #ff7b7b;
+    --bg-color: #0b0f19;
+    --surface-color: #0d111d;
+    --card-bg: rgba(13, 17, 29, 0.7);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-primary: #38bdf8;
+    --accent-secondary: #818cf8;
+    --success: #10b981;
+    --warning: #fbbf24;
+    --danger: #f43f5e;
     --info: #0ea5e9;
-    --glass-effect: none;
+    --glass-effect: blur(16px);
 }
 
 .glass-card {
@@ -285,50 +285,49 @@
 }
 
 .details-modal {
-    background: var(--surface-color);
-    border: 1px solid var(--card-border);
-    border-radius: 6px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+    background: #0d111d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
     width: 100%;
-    max-width: 1100px;
+    max-width: 1050px;
     max-height: 90vh;
     overflow-y: auto;
     animation: fadeIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .section-title {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--accent-primary);
-    margin-bottom: 20px;
+    letter-spacing: 1.2px;
+    color: #38bdf8;
+    margin-bottom: 16px;
     font-weight: 700;
-    opacity: 0.8;
 }
 
 .group-pill {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--card-border);
-    padding: 6px 14px;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: #cbd5e1;
     transition: all 0.2s;
     display: inline-flex;
     align-items: center;
 }
 
 .group-pill.privileged-group {
-    background: rgba(255, 123, 123, 0.15);
-    border-color: rgba(255, 123, 123, 0.5);
-    color: #ff7b7b;
-    font-weight: 700;
+    background: rgba(244, 63, 94, 0.12);
+    border-color: rgba(244, 63, 94, 0.3);
+    color: #f43f5e;
+    font-weight: 600;
     box-shadow: none;
 }
 
 .group-pill:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
 }
 
 /* Responsive */
