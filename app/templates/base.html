@@ -46,15 +46,6 @@
     <!-- Navigation -->
     <nav class="sidebar-nav">
 
-      <!-- Home -->
-      <a href="{{ url_for('ad.dashboard') }}"
-         class="nav-item-direct {% if page == 'home' or page == 'ad_dashboard' %}active{% endif %}">
-        <span class="nav-item-icon"><i class="bi bi-house-fill"></i></span>
-        <span>Início</span>
-      </a>
-
-      <div class="nav-divider"></div>
-
       <!-- ─── Report AD ─────────────────── -->
       {% if current_user.has_module('report_ad') %}
       <div class="nav-group">
@@ -67,7 +58,7 @@
         <div class="nav-group-items {% if page and page.startswith('ad_') %}open{% endif %}"
              id="nav-ad">
           <a href="{{ url_for('ad.dashboard') }}"
-             class="nav-link {% if page == 'ad_dashboard' %}active{% endif %}">
+             class="nav-link {% if page == 'ad_dashboard' or page == 'home' %}active{% endif %}">
             <i class="bi bi-grid-3x3-gap-fill nav-link-icon"></i>
             Dashboard
           </a>

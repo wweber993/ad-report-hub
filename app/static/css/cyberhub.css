@@ -1,61 +1,61 @@
 /* ================================================================
-   CyberHub — Unified Design System
-   Dark SOC/NOC theme · Outfit font · Sky-blue accent
+   AD Report Hub — Microsoft Azure Fluent Design System
+   Professional Dark Theme · Segoe UI · Azure Blue Accent
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ── CSS Variables ─────────────────────────────────────────────── */
 :root {
   /* Backgrounds */
-  --bg-primary:    #0b1120;
-  --bg-secondary:  #0f172a;
-  --bg-card:       rgba(15, 23, 42, 0.85);
-  --bg-hover:      rgba(255, 255, 255, 0.04);
-  --bg-active:     rgba(56, 189, 248, 0.08);
+  --bg-primary:    #111111;
+  --bg-secondary:  #1b1b1c;
+  --bg-card:       #252526;
+  --bg-hover:      rgba(255, 255, 255, 0.06);
+  --bg-active:     rgba(0, 120, 212, 0.1);
 
   /* Borders */
-  --border:        rgba(255, 255, 255, 0.08);
-  --border-light:  rgba(255, 255, 255, 0.04);
-  --border-accent: rgba(56, 189, 248, 0.3);
+  --border:        #333333;
+  --border-light:  #2d2d2d;
+  --border-accent: rgba(0, 120, 212, 0.4);
 
   /* Accents */
-  --accent:        #38bdf8;
-  --accent-dim:    rgba(56, 189, 248, 0.12);
-  --accent-glow:   rgba(56, 189, 248, 0.25);
-  --purple:        #818cf8;
-  --purple-dim:    rgba(129, 140, 248, 0.12);
+  --accent:        #50e6ff; /* Azure Blue light for dark theme */
+  --accent-dim:    rgba(80, 230, 255, 0.12);
+  --accent-glow:   transparent;
+  --purple:        #b4a0ff;
+  --purple-dim:    rgba(180, 160, 255, 0.12);
 
   /* Semantic */
-  --green:         #10b981;
-  --green-dim:     rgba(16, 185, 129, 0.12);
-  --red:           #e11d48;
-  --red-dim:       rgba(225, 29, 72, 0.12);
-  --yellow:        #f59e0b;
-  --yellow-dim:    rgba(245, 158, 11, 0.12);
-  --orange:        #f59e0b;
+  --green:         #6ce26c;
+  --green-dim:     rgba(108, 226, 108, 0.12);
+  --red:           #ff7b7b;
+  --red-dim:       rgba(255, 123, 123, 0.12);
+  --yellow:        #fce100;
+  --yellow-dim:    rgba(252, 225, 0, 0.12);
+  --orange:        #ff8c00;
 
   /* Text */
-  --text-primary:  #f8fafc;
-  --text-secondary:#94a3b8;
-  --text-muted:    #475569;
+  --text-primary:  #ffffff;
+  --text-secondary:#cccccc;
+  --text-muted:    #a0a0a0;
 
   /* Layout */
-  --sidebar-width:          240px;
+  --sidebar-width:          260px;
   --sidebar-collapsed-width: 64px;
-  --topbar-height:          60px;
+  --topbar-height:          48px;
 
   /* Misc */
-  --radius:     14px;
-  --radius-sm:  8px;
-  --radius-lg:  20px;
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-sm:  0 2px 8px rgba(0,0,0,0.3);
-  --shadow-md:  0 4px 20px rgba(0,0,0,0.4);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,0.5);
+  --radius:     4px;
+  --radius-sm:  2px;
+  --radius-lg:  6px;
+  --transition: all 0.15s ease-in-out;
+  --shadow-sm:  0 2px 4px rgba(0,0,0,0.2);
+  --shadow-md:  0 4px 8px rgba(0,0,0,0.3);
+  --shadow-lg:  0 8px 16px rgba(0,0,0,0.4);
 
-  --font-sans: 'Outfit', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Consolas', 'JetBrains Mono', monospace;
 }
 
 /* ── Reset & Base ──────────────────────────────────────────────── */
@@ -65,13 +65,10 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--text-primary);
   background: var(--bg-primary);
-  background-image:
-    radial-gradient(ellipse at 0% 0%,   rgba(56,189,248,0.04) 0%, transparent 55%),
-    radial-gradient(ellipse at 100% 100%, rgba(129,140,248,0.04) 0%, transparent 55%);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -115,14 +112,12 @@ code, pre, .mono { font-family: var(--font-mono); }
 }
 
 .brand-icon {
-  width: 34px; height: 34px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  border-radius: var(--radius-sm);
+  width: 28px; height: 28px;
+  background: transparent;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  font-size: 16px;
-  color: #fff;
-  box-shadow: 0 0 18px var(--accent-glow);
+  font-size: 18px;
+  color: var(--accent);
 }
 
 .brand-text {
@@ -324,12 +319,13 @@ code, pre, .mono { font-family: var(--font-mono); }
 
 .user-avatar {
   width: 32px; height: 32px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.8rem;
-  color: #fff;
+  color: var(--text-primary);
   flex-shrink: 0;
 }
 
@@ -370,8 +366,7 @@ code, pre, .mono { font-family: var(--font-mono); }
 /* ── Topbar ─────────────────────────────────────────────────────── */
 .topbar {
   height: var(--topbar-height);
-  background: rgba(5,8,17,0.85);
-  backdrop-filter: blur(12px);
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -415,7 +410,6 @@ code, pre, .mono { font-family: var(--font-mono); }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(16px);
   transition: var(--transition);
   overflow: hidden;
   position: relative;
@@ -424,8 +418,8 @@ code, pre, .mono { font-family: var(--font-mono); }
 .card-hub::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, var(--accent-dim), transparent 60%);
+  top: 0; left: 0; bottom: 0; width: 3px;
+  background: transparent;
 }
 
 .card-hub:hover {
@@ -446,13 +440,12 @@ code, pre, .mono { font-family: var(--font-mono); }
 
 .card-hub-body { padding: 20px; }
 
-/* ── Glass Card (for auth pages) ────────────────────────────────── */
+/* ── Flat Card (for auth pages) ────────────────────────────────── */
 .glass-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  backdrop-filter: blur(20px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Buttons ────────────────────────────────────────────────────── */
@@ -717,9 +710,6 @@ code, pre, .mono { font-family: var(--font-mono); }
   justify-content: center;
   min-height: 100vh;
   background: var(--bg-primary);
-  background-image:
-    radial-gradient(circle at 20% 20%, rgba(56,189,248,0.07) 0%, transparent 45%),
-    radial-gradient(circle at 80% 80%, rgba(129,140,248,0.07) 0%, transparent 45%);
 }
 
 .auth-card {
@@ -736,13 +726,11 @@ code, pre, .mono { font-family: var(--font-mono); }
 
 .auth-logo-icon {
   width: 64px; height: 64px;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  border-radius: 18px;
+  background: transparent;
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 16px;
-  font-size: 28px;
-  color: #fff;
-  box-shadow: 0 0 28px var(--accent-glow);
+  font-size: 42px;
+  color: var(--accent);
 }
 
 .auth-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }

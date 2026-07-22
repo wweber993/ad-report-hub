@@ -10,7 +10,7 @@ let currentFilters = {
     all: false,
     privileged: false,
     compliant: false,
-    nonCompliant: true,
+    nonCompliant: false,
     lockedOut: false,
     neverExpires: false,
     disabled: false,
@@ -189,14 +189,14 @@ function applyFiltersAndSearch() {
             (user.DisplayName && user.DisplayName.toLowerCase().includes(term)) ||
             (user.Username && user.Username.toLowerCase().includes(term)) ||
             (user.Email && user.Email.toLowerCase().includes(term)) ||
-            (user.DisplayDepartment && user.DisplayDepartment.toLowerCase().includes(term));
+            (user.Department && user.Department.toLowerCase().includes(term));
             
         const matchesEnv = !env || user.Environment === env;
         
         let matchesStatus = true;
         if (currentFilters.privileged && !user.isPrivileged) matchesStatus = false;
-        if (currentFilters.nonCompliant && user.isCompliant) matchesStatus = false;
-        if (currentFilters.compliant && !user.isCompliant) matchesStatus = false;
+        if (currentFilters.nonCompliant && user.ComplianceStatus) matchesStatus = false;
+        if (currentFilters.compliant && !user.ComplianceStatus) matchesStatus = false;
         if (currentFilters.lockedOut && !user.LockedOut) matchesStatus = false;
         if (currentFilters.neverExpires && !user.PasswordNeverExpires) matchesStatus = false;
         if (currentFilters.disabled && user.Enabled) matchesStatus = false;
@@ -204,10 +204,10 @@ function applyFiltersAndSearch() {
 
         let matchesCreated = true;
         if (createdDaysFilter !== null) {
-            if (!user.AccountCreated || user.AccountCreated === 'Nunca') {
+            if (!user.Created || user.Created === 'Nunca') {
                 matchesCreated = false;
             } else {
-                const createdDate = new Date(user.AccountCreated);
+                const createdDate = new Date(user.Created);
                 const now = new Date();
                 const diffTime = Math.abs(now - createdDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -276,7 +276,7 @@ function renderTable() {
             <td>
                 <div class="d-flex align-items-center gap-2">
                     <div class="stat-icon mb-0" style="width: 32px; height: 32px; font-size: 10px; border-radius: 8px; background: rgba(56, 189, 248, 0.05)">
-                        ${(user.DisplayName || user.Username).substring(0, 2).toUpperCase()}
+                        ${((user.DisplayName || user.Username) || '??').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
                         <div class="fw-bold d-flex align-items-center gap-1" style="font-size: 0.9rem">
@@ -289,9 +289,9 @@ function renderTable() {
                 </div>
             </td>
             <td class="small">${user.Email || '-'}</td>
-            <td class="small">${user.DisplayDepartment || '-'}</td>
+            <td class="small">${user.Department || '-'}</td>
             <td><span class="badge bg-secondary bg-opacity-10 text-secondary">${user.Environment || 'N/A'}</span></td>
-            <td class="small">${formatDate(user.LastLogonDate)}</td>
+            <td class="small">${formatDate(user.LastLogon)}</td>
             <td>
                 <span class="badge ${user.Enabled ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${user.Enabled ? 'text-success' : 'text-danger'}">
                     ${user.Enabled ? 'Ativo' : 'Inativo'}
@@ -312,7 +312,7 @@ function renderTable() {
                 })() }
             </td>
             <td>
-                <span class="risk-badge risk-${getRiskLevel(user.riskScore)}">${user.riskScore}%</span>
+                <span class="risk-badge risk-${getRiskLevel(user.RiskScore)}">${user.RiskScore}%</span>
             </td>
         </tr>
     `).join('');
@@ -646,8 +646,8 @@ function applySort() {
                 valB = b.Enabled ? 1 : 0;
                 break;
             case 'risk':
-                valA = a.riskScore || 0;
-                valB = b.riskScore || 0;
+                valA = a.RiskScore || 0;
+                valB = b.RiskScore || 0;
                 break;
             default:
                 valA = ''; valB = '';

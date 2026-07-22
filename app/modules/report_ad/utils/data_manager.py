@@ -403,6 +403,16 @@ def calculate_iso_soc_compliance(users: list) -> dict:
 
     locked_out = [u for u in users if u.get("LockedOut") and not u.get("isException")]
 
+    built_in = [
+        u for u in enabled_users
+        if u.get("Username", "").lower() in ("administrator", "guest", "krbtgt") and not u.get("isException")
+    ]
+
+    spn_accounts = [
+        u for u in enabled_users
+        if u.get("HasSPN") and not u.get("isException")
+    ]
+
     controls = [
         # ── ISO 27001 ──────────────────────────────────────────────
         {
@@ -589,6 +599,46 @@ def calculate_iso_soc_compliance(users: list) -> dict:
             "count": len(disabled_privileged),
             "recommendation": "Certifique-se de que o processo de offboarding remove todos os grupos dos usuários desativados (ou os mova para uma OU restrita sem permissões).",
         },
+        # ── SOC 2 Type II Adicional ──────────────────────────────────────────────
+        {
+            "id": "CC6.1",
+            "framework": "SOC 2",
+            "domain": "Logical Access",
+            "title": "Contas Padrão Desativadas",
+            "description": "Contas built-in como Administrator e Guest devem ser desativadas ou ter nomes alterados (renamed) para evitar ataques baseados em padrões conhecidos.",
+            "rule": "Contas Built-in (Administrator/Guest) ativas",
+            "status": _status(built_in, warn_threshold=0),
+            "score": _compliance_pct(built_in, enabled_users),
+            "violations": _user_list(built_in),
+            "count": len(built_in),
+            "recommendation": "Desative as contas Guest e Administrator. Utilize contas administrativas nomeadas para garantir auditoria adequada (Accountability).",
+        },
+        {
+            "id": "CC6.6",
+            "framework": "SOC 2",
+            "domain": "Security Measures",
+            "title": "Mitigação de Ataques de Força Bruta",
+            "description": "Monitorar e agir sobre contas que excedem os limites de falha de login (Brute force / Password spraying).",
+            "rule": "Contas ativas com mais de 5 Bad Logons recentes",
+            "status": _status(high_bad_logon, warn_threshold=3),
+            "score": _compliance_pct(high_bad_logon, enabled_users),
+            "violations": _user_list(high_bad_logon),
+            "count": len(high_bad_logon),
+            "recommendation": "Investigue os logs do Domain Controller para identificar a origem das falhas de login. Verifique se há senhas salvas em cache ou tentativas de força bruta.",
+        },
+        {
+            "id": "CIS 5.1",
+            "framework": "CIS Controls",
+            "domain": "Account Management",
+            "title": "Inventário de Contas de Serviço (SPN)",
+            "description": "Contas com Service Principal Names (SPN) configurados são alvos de Kerberoasting. Devem possuir senhas complexas de 25+ caracteres.",
+            "rule": "Contas com SPN atrelado",
+            "status": "WARN" if spn_accounts else "PASS",
+            "score": 80 if spn_accounts else 100,
+            "violations": _user_list(spn_accounts),
+            "count": len(spn_accounts),
+            "recommendation": "Revise todas as contas de serviço. Certifique-se de que possuem senhas complexas. Idealmente utilize Group Managed Service Accounts (gMSA).",
+        }
     ]
 
     pass_count    = sum(1 for c in controls if c["status"] == "PASS")

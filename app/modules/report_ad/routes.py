@@ -221,14 +221,14 @@ def api_history():
 
 # ── Cached loader (shared by all API routes) ────────────────────────────
 
-@cache.memoize(timeout=300)
+# Removed cache.memoize per user request to always load fresh data
 def _load_users_cached(data_dir: str, overrides_path: str) -> list:
     """Cached wrapper around load_all_users. TTL = 5 minutes."""
     import time
     t0 = time.perf_counter()
     users = load_all_users(data_dir, overrides_path)
     elapsed = time.perf_counter() - t0
-    logger.info("[cache MISS] Loaded %d users in %.3fs", len(users), elapsed)
+    logger.info("[Disk Load] Carregou %d usuários diretamente do arquivo JSON em %.3fs", len(users), elapsed)
     return users
 
 
