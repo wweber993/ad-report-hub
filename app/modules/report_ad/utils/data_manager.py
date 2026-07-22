@@ -208,10 +208,19 @@ def load_all_users(data_dir: str, overrides_path: str) -> list:
             u["LastLogonDate"]  = logon_dt.isoformat()   if logon_dt  else "Nunca"
             u["Modified"]       = modified_dt.isoformat() if modified_dt else None
 
-            user_groups = [g.lower() for g in u.get("Groups", [])]
+            raw_groups = u.get("Groups") or []
+            if isinstance(raw_groups, str):
+                groups_list = [g.strip() for g in raw_groups.split() if g.strip()]
+            elif isinstance(raw_groups, list):
+                groups_list = [str(g).strip() for g in raw_groups if g]
+            else:
+                groups_list = []
+
+            u["Groups"] = groups_list
+            user_groups_lower = [g.lower() for g in groups_list]
             u["isPrivileged"] = (
                 u.get("isPrivileged", False)
-                or any(g in _PRIVILEGED_LOWER for g in user_groups)
+                or any(g in _PRIVILEGED_LOWER for g in user_groups_lower)
             )
 
             risk = _calculate_risk(u)

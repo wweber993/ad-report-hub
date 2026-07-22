@@ -194,13 +194,14 @@ function applyFiltersAndSearch() {
         const matchesEnv = !env || user.Environment === env;
         
         let matchesStatus = true;
+        const isComp = user.isCompliant ?? user.ComplianceStatus ?? true;
         if (currentFilters.privileged && !user.isPrivileged) matchesStatus = false;
-        if (currentFilters.nonCompliant && user.ComplianceStatus) matchesStatus = false;
-        if (currentFilters.compliant && !user.ComplianceStatus) matchesStatus = false;
+        if (currentFilters.nonCompliant && isComp) matchesStatus = false;
+        if (currentFilters.compliant && !isComp) matchesStatus = false;
         if (currentFilters.lockedOut && !user.LockedOut) matchesStatus = false;
         if (currentFilters.neverExpires && !user.PasswordNeverExpires) matchesStatus = false;
         if (currentFilters.disabled && user.Enabled) matchesStatus = false;
-        if (currentFilters.inactive90 && (user.DaysSinceLastLogon === null || user.DaysSinceLastLogon < 90)) matchesStatus = false;
+        if (currentFilters.inactive90 && (user.DaysSinceLastLogon === null || user.DaysSinceLastLogon === undefined || user.DaysSinceLastLogon < 90)) matchesStatus = false;
 
         let matchesCreated = true;
         if (createdDaysFilter !== null) {
@@ -291,7 +292,7 @@ function renderTable() {
             <td class="small">${user.Email || '-'}</td>
             <td class="small">${user.Department || '-'}</td>
             <td><span class="badge bg-secondary bg-opacity-10 text-secondary">${user.Environment || 'N/A'}</span></td>
-            <td class="small">${formatDate(user.LastLogon)}</td>
+            <td class="small">${formatDate(user.LastLogonDate || user.LastLogon)}</td>
             <td>
                 <span class="badge ${user.Enabled ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${user.Enabled ? 'text-success' : 'text-danger'}">
                     ${user.Enabled ? 'Ativo' : 'Inativo'}
@@ -299,8 +300,12 @@ function renderTable() {
             </td>
             <td>
                 ${ (() => {
-                    const privilegedGroupsLower = (stats.privilegedGroups || []).map(pg => pg.toLowerCase());
-                    const privGroups = (user.Groups || []).filter(g => privilegedGroupsLower.includes(g.toLowerCase()));
+                    const privilegedGroupsLower = (stats.privilegedGroups || []).map(pg => (pg || '').toLowerCase());
+                    let rawGroups = user.Groups || [];
+                    if (typeof rawGroups === 'string') rawGroups = rawGroups.split(/\s+/);
+                    if (!Array.isArray(rawGroups)) rawGroups = [];
+                    
+                    const privGroups = rawGroups.filter(g => g && privilegedGroupsLower.includes(String(g).toLowerCase()));
                     if (privGroups.length === 0) return '<span class="text-muted small">-</span>';
                     const visible = privGroups.slice(0, 2);
                     const hidden = privGroups.slice(2);
@@ -312,7 +317,7 @@ function renderTable() {
                 })() }
             </td>
             <td>
-                <span class="risk-badge risk-${getRiskLevel(user.RiskScore)}">${user.RiskScore}%</span>
+                <span class="risk-badge risk-${getRiskLevel(user.riskScore ?? user.RiskScore ?? 0)}">${user.riskScore ?? user.RiskScore ?? 0}%</span>
             </td>
         </tr>
     `).join('');
