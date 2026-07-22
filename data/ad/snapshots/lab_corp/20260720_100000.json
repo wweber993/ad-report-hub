@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-07-20T10:00:00.000000",
+  "environment": "Lab_Corp",
+  "stats": {
+    "total": 280,
+    "active": 278,
+    "inactive": 2,
+    "lockedOut": 1,
+    "nonCompliant": 2,
+    "privileged": 2,
+    "highRiskUsers": 2,
+    "healthScore": 98
+  },
+  "compliance": {
+    "total": 14,
+    "pass": 9,
+    "fail": 1,
+    "warn": 4,
+    "overallScore": 96
+  }
+}
